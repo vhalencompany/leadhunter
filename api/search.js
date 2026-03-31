@@ -17,7 +17,7 @@ export default async function handler(req, res) {
         searchStringsArray: [niche],
         locationQuery: `${city}, Brasil`,
         maxCrawledPlacesPerSearch: parseInt(qty),
-        language: 'pt',
+        language: 'pt-BR',
         maxImages: 0, maxReviews: 0,
         includeWebResults: false, scrapeContacts: false,
         scrapeDirectories: false, skipClosedPlaces: false,
