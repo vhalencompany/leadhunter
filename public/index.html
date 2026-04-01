@@ -37,23 +37,30 @@ body {
   cursor: default;
 }
 
-/* ── CANVAS PARTÍCULAS ── */
-#particles-canvas {
+/* ── LETTER GLITCH BACKGROUND ── */
+#letter-glitch-bg {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  background-color: #060608;
+  overflow: hidden;
 }
 
-/* ── NOISE OVERLAY ── */
-.noise {
-  position: fixed;
+#letter-glitch-bg canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0.62;
+}
+
+/* vignette externa para escurecer bordas */
+#letter-glitch-bg::after {
+  content: '';
+  position: absolute;
   inset: 0;
-  z-index: 1;
+  background: radial-gradient(ellipse 90% 90% at 50% 50%, rgba(6,6,8,0) 40%, rgba(6,6,8,0.80) 100%);
   pointer-events: none;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  background-size: 200px 200px;
 }
 
 /* ── MESH GRADIENT ── */
@@ -208,7 +215,7 @@ header {
 }
 
 .hero-title .dim {
-  color: var(--dark-6);
+  color: var(--muted-3);
 }
 
 .hero-desc {
@@ -220,7 +227,7 @@ header {
 }
 
 .hero-desc strong {
-  color: var(--muted-3);
+  color: var(--light);
   font-weight: 500;
 }
 
@@ -509,10 +516,7 @@ header {
   border: 1px solid var(--dark-4);
   border-radius: 18px;
   margin-bottom: 16px;
-  overflow: hidden;
-  animation: riseUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
-  transform-style: preserve-3d;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s, transform 0.45s cubic-bezier(0.22,1,0.36,1);
   will-change: transform;
 }
 
@@ -524,6 +528,8 @@ header {
 .card-inner {
   position: relative;
   overflow: hidden;
+  border-radius: 18px;
+  animation: riseUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
 }
 
 .card-inner::before {
@@ -769,8 +775,7 @@ footer {
 </head>
 <body>
 
-<canvas id="particles-canvas"></canvas>
-<div class="noise"></div>
+<div id="letter-glitch-bg"></div>
 <div class="mesh"></div>
 
 <header>
@@ -835,8 +840,10 @@ footer {
         <select id="qtyInput" class="input" style="cursor:pointer">
           <option value="5">5 leads</option>
           <option value="10" selected>10 leads</option>
-          <option value="15">15 leads</option>
           <option value="20">20 leads</option>
+          <option value="30">30 leads</option>
+          <option value="50">50 leads</option>
+          <option value="100">100 leads</option>
         </select>
       </div>
     </div>
@@ -876,80 +883,135 @@ footer {
 <footer>Vhalen Company © 2025 — Uso Restrito</footer>
 
 <script>
-/* ── PARTÍCULAS ── */
+/* ── LETTER GLITCH BACKGROUND ── */
 (function() {
-  const canvas = document.getElementById('particles-canvas');
+  const container = document.getElementById('letter-glitch-bg');
+  const canvas = document.createElement('canvas');
+  container.appendChild(canvas);
   const ctx = canvas.getContext('2d');
-  let W, H, particles = [], animId;
 
-  const GOLD = 'rgba(200,169,110,';
-  const ORANGE = 'rgba(232,112,58,';
-  const COUNT = 55;
-  const MAX_DIST = 130;
+  const glitchColors = ['#1A1408', '#C8A96E', '#E8703A'];
+  const glitchSpeed = 50;
+  const smooth = true;
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$&*()-_+=/[]{};:<>.,0123456789';
+  const chars = Array.from(characters);
+  const fontSize = 16;
+  const charWidth = 10;
+  const charHeight = 20;
 
-  function resize() {
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
+  let letters = [];
+  let grid = { columns: 0, rows: 0 };
+  let lastGlitchTime = Date.now();
+  let animId;
+
+  function getRandomChar() { return chars[Math.floor(Math.random() * chars.length)]; }
+  function getRandomColor() { return glitchColors[Math.floor(Math.random() * glitchColors.length)]; }
+
+  function hexToRgb(hex) {
+    hex = hex.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, (m, r, g, b) => r+r+g+g+b+b);
+    const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return r ? { r: parseInt(r[1],16), g: parseInt(r[2],16), b: parseInt(r[3],16) } : null;
   }
 
-  function rand(min, max) { return Math.random() * (max - min) + min; }
-
-  function createParticle() {
-    return {
-      x: rand(0, W),
-      y: rand(0, H),
-      vx: rand(-0.18, 0.18),
-      vy: rand(-0.18, 0.18),
-      r: rand(1, 2.2),
-      color: Math.random() > 0.6 ? ORANGE : GOLD,
-      alpha: rand(0.2, 0.6)
-    };
+  function interpolateColor(start, end, factor) {
+    return `rgb(${Math.round(start.r+(end.r-start.r)*factor)},${Math.round(start.g+(end.g-start.g)*factor)},${Math.round(start.b+(end.b-start.b)*factor)})`;
   }
 
-  function init() {
-    particles = [];
-    for (let i = 0; i < COUNT; i++) particles.push(createParticle());
+  function initLetters(columns, rows) {
+    grid = { columns, rows };
+    letters = Array.from({ length: columns * rows }, () => ({
+      char: getRandomChar(),
+      color: getRandomColor(),
+      targetColor: getRandomColor(),
+      colorProgress: 1
+    }));
   }
 
-  function draw() {
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const columns = Math.ceil(W / charWidth);
+    const rows = Math.ceil(H / charHeight);
+    initLetters(columns, rows);
+    drawLetters();
+  }
+
+  function drawLetters() {
+    const W = window.innerWidth;
+    const H = window.innerHeight;
     ctx.clearRect(0, 0, W, H);
+    ctx.font = fontSize + 'px monospace';
+    ctx.textBaseline = 'top';
+    letters.forEach((letter, index) => {
+      const x = (index % grid.columns) * charWidth;
+      const y = Math.floor(index / grid.columns) * charHeight;
+      ctx.fillStyle = letter.color;
+      ctx.fillText(letter.char, x, y);
+    });
+  }
 
-    for (let i = 0; i < particles.length; i++) {
-      const p = particles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      if (p.x < -10) p.x = W + 10;
-      if (p.x > W + 10) p.x = -10;
-      if (p.y < -10) p.y = H + 10;
-      if (p.y > H + 10) p.y = -10;
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = p.color + p.alpha + ')';
-      ctx.fill();
-
-      for (let j = i + 1; j < particles.length; j++) {
-        const q = particles[j];
-        const dx = p.x - q.x, dy = p.y - q.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < MAX_DIST) {
-          const opacity = (1 - dist / MAX_DIST) * 0.12;
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(q.x, q.y);
-          ctx.strokeStyle = GOLD + opacity + ')';
-          ctx.lineWidth = 0.6;
-          ctx.stroke();
-        }
+  function updateLetters() {
+    const updateCount = Math.max(1, Math.floor(letters.length * 0.05));
+    for (let i = 0; i < updateCount; i++) {
+      const index = Math.floor(Math.random() * letters.length);
+      if (!letters[index]) continue;
+      letters[index].char = getRandomChar();
+      letters[index].targetColor = getRandomColor();
+      if (!smooth) {
+        letters[index].color = letters[index].targetColor;
+        letters[index].colorProgress = 1;
+      } else {
+        letters[index].colorProgress = 0;
       }
     }
-    animId = requestAnimationFrame(draw);
   }
 
-  window.addEventListener('resize', () => { resize(); init(); });
-  resize();
-  init();
-  draw();
+  function handleSmoothTransitions() {
+    let needsRedraw = false;
+    letters.forEach(letter => {
+      if (letter.colorProgress < 1) {
+        letter.colorProgress += 0.05;
+        if (letter.colorProgress > 1) letter.colorProgress = 1;
+        const startRgb = hexToRgb(letter.color);
+        const endRgb = hexToRgb(letter.targetColor);
+        if (startRgb && endRgb) {
+          letter.color = interpolateColor(startRgb, endRgb, letter.colorProgress);
+          needsRedraw = true;
+        }
+      }
+    });
+    if (needsRedraw) drawLetters();
+  }
+
+  function animate() {
+    const now = Date.now();
+    if (now - lastGlitchTime >= glitchSpeed) {
+      updateLetters();
+      drawLetters();
+      lastGlitchTime = now;
+    }
+    if (smooth) handleSmoothTransitions();
+    animId = requestAnimationFrame(animate);
+  }
+
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      cancelAnimationFrame(animId);
+      resizeCanvas();
+      animate();
+    }, 100);
+  });
+
+  resizeCanvas();
+  animate();
 })();
 
 /* ── TILT 3D ── */
@@ -960,11 +1022,13 @@ function initTilt(card) {
     const cy = rect.top + rect.height / 2;
     const dx = (e.clientX - cx) / (rect.width / 2);
     const dy = (e.clientY - cy) / (rect.height / 2);
-    card.style.transform = `perspective(800px) rotateY(${dx * 5}deg) rotateX(${-dy * 4}deg) scale(1.01)`;
+    card.style.transition = 'border-color 0.3s, transform 0.12s ease-out';
+    card.style.transform = `perspective(900px) rotateY(${dx * 5}deg) rotateX(${-dy * 4}deg) scale(1.01)`;
     card.style.borderColor = 'rgba(200,169,110,0.35)';
   });
   card.addEventListener('mouseleave', () => {
-    card.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg) scale(1)';
+    card.style.transition = 'border-color 0.3s, transform 0.5s cubic-bezier(0.22,1,0.36,1)';
+    card.style.transform = 'perspective(900px) rotateY(0deg) rotateX(0deg) scale(1)';
     card.style.borderColor = '';
   });
 }
@@ -1055,7 +1119,15 @@ async function hunt() {
       totalAvaliacoes: p.reviewsCount || 0,
       site: p.website || ''
     }));
-    const final = leadsRaw.map((l, i) => ({ ...l, ...(analysis.analises?.[i] || {}) }));
+    const analiseMap = {};
+    (analysis.analises || []).forEach(a => {
+      if (a.nome) analiseMap[a.nome.trim().toLowerCase()] = a;
+    });
+    const final = leadsRaw.map(l => {
+      const key = (l.nome || '').trim().toLowerCase();
+      const match = analiseMap[key] || analysis.analises?.[leadsRaw.indexOf(l)] || {};
+      return { ...l, ...match };
+    });
     clearStatus();
     document.getElementById('resultsLabel').textContent = `${final.length} oportunidades — ${niche} em ${city}`;
     document.getElementById('resultsMeta').classList.add('show');
@@ -1086,8 +1158,8 @@ function buildCard(l, i) {
     : `<span class="no-phone">📵 Sem telefone</span>`;
   const siteHtml = l.site ? `<a href="${l.site}" target="_blank" class="contact-btn btn-site">🌐 Site</a>` : '';
 
-  return `<div class="card" style="animation-delay:${delay}s">
-    <div class="card-inner">
+  return `<div class="card">
+    <div class="card-inner" style="animation-delay:${delay}s">
       <div class="card-header">
         <div>
           <div class="card-name">${l.nome}</div>
@@ -1144,8 +1216,3 @@ function cp(el, hintId) {
 </script>
 </body>
 </html>
-
-
-    
-
-    
