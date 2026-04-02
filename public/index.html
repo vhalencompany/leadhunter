@@ -413,40 +413,52 @@ header {
   background: var(--dark-2);
   border: 1px solid var(--dark-4);
   border-radius: 14px;
-  padding: 18px 22px;
+  padding: 24px 28px;
   margin-bottom: 16px;
-  align-items: center;
-  gap: 16px;
   animation: fadeIn 0.3s ease;
 }
 
-.status.show { display: flex; }
+.status.show { display: block; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-.spinner {
-  width: 22px;
-  height: 22px;
-  border: 2px solid var(--dark-5);
-  border-top-color: var(--gold);
-  border-right-color: rgba(200,169,110,0.4);
-  border-radius: 50%;
-  flex-shrink: 0;
-  animation: spin 0.75s linear infinite;
+.ticker-wrap {
+  margin-bottom: 16px;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.status-content { flex: 1; }
-
-.status-text {
-  font-size: 13px;
-  color: var(--muted-3);
-  font-weight: 400;
-  margin-bottom: 8px;
+.ticker-word {
+  font-family: 'Space Grotesk', monospace;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(200,169,110,0.4), 0 0 8px rgba(200,169,110,0.2);
+  min-height: 36px;
+  margin-bottom: 6px;
 }
 
-.status-text strong { color: var(--gold); font-weight: 600; }
+.ticker-word span {
+  display: inline-block;
+  transition: color 0.15s;
+}
+
+.ticker-word span.done {
+  color: var(--gold-2);
+}
+
+.ticker-word span.glitch {
+  color: var(--orange);
+  opacity: 0.7;
+}
+
+.ticker-sub {
+  font-size: 11px;
+  color: var(--muted-2);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 500;
+}
 
 .steps {
   display: flex;
@@ -866,9 +878,11 @@ footer {
   </div>
 
   <div class="status" id="statusBox">
-    <div class="spinner"></div>
     <div class="status-content">
-      <div class="status-text" id="statusTxt">Iniciando...</div>
+      <div class="ticker-wrap">
+        <div class="ticker-word" id="tickerWord"></div>
+        <div class="ticker-sub" id="tickerSub">Aguarde...</div>
+      </div>
       <div class="steps">
         <div class="sd" id="sd1"></div>
         <div class="sd" id="sd2"></div>
@@ -1053,18 +1067,105 @@ function pickTag(el, val) {
   document.getElementById('nicheInput').value = val;
 }
 
+/* ── TICKER ── */
+const TICKER_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
+const TICKER_MESSAGES = [
+  { word: 'MAPEANDO', sub: 'Buscando oportunidades no Google Maps...' },
+  { word: 'COLETANDO', sub: 'Extraindo dados de presença digital...' },
+  { word: 'ANALISANDO', sub: 'Identificando falhas estratégicas com IA...' },
+  { word: 'CONSOLIDANDO', sub: 'Montando inteligência comercial...' }
+];
+let tickerAnimId = null;
+let tickerMsgInterval = null;
+let tickerMsgIndex = 0;
+
+function getTickerChar() {
+  return TICKER_CHARS[Math.floor(Math.random() * TICKER_CHARS.length)];
+}
+
+function runTicker(word, onComplete) {
+  const el = document.getElementById('tickerWord');
+  if (!el) return;
+
+  // Monta spans
+  el.innerHTML = word.split('').map(() => `<span>${getTickerChar()}</span>`).join('');
+  const spans = el.querySelectorAll('span');
+  const cycleCount = 6;
+  let cycleCurrent = 0;
+  let letterCurrent = 0;
+  let done = false;
+
+  cancelAnimationFrame(tickerAnimId);
+
+  function loop() {
+    if (done) { if (onComplete) onComplete(); return; }
+
+    spans.forEach((span, index) => {
+      if (index >= letterCurrent) {
+        span.textContent = getTickerChar();
+        span.className = 'glitch';
+      }
+    });
+
+    if (cycleCurrent < cycleCount) {
+      cycleCurrent++;
+    } else if (letterCurrent < spans.length) {
+      spans[letterCurrent].textContent = word[letterCurrent];
+      spans[letterCurrent].className = 'done';
+      cycleCurrent = 0;
+      letterCurrent++;
+    } else {
+      done = true;
+    }
+
+    if (!done) {
+      tickerAnimId = requestAnimationFrame(loop);
+    } else {
+      if (onComplete) setTimeout(onComplete, 600);
+    }
+  }
+
+  loop();
+}
+
+function startTickerLoop(stepIndex) {
+  clearInterval(tickerMsgInterval);
+  tickerMsgIndex = stepIndex || 0;
+
+  function showNext() {
+    const msg = TICKER_MESSAGES[tickerMsgIndex % TICKER_MESSAGES.length];
+    document.getElementById('tickerSub').textContent = msg.sub;
+    runTicker(msg.word, () => {
+      tickerMsgIndex++;
+    });
+  }
+
+  showNext();
+  tickerMsgInterval = setInterval(showNext, 4000);
+}
+
+function stopTicker() {
+  cancelAnimationFrame(tickerAnimId);
+  clearInterval(tickerMsgInterval);
+}
+
 function setStatus(txt, step) {
   document.getElementById('statusBox').classList.add('show');
-  document.getElementById('statusTxt').innerHTML = txt;
   if (step !== undefined) {
     ['sd1','sd2','sd3','sd4'].forEach((id, i) => {
       const d = document.getElementById(id);
       d.className = 'sd' + (i < step ? ' done' : i === step ? ' active' : '');
     });
+    // Atualiza mensagem do ticker baseado no step
+    const msg = TICKER_MESSAGES[Math.min(step, TICKER_MESSAGES.length - 1)];
+    if (msg) document.getElementById('tickerSub').textContent = msg.sub;
   }
 }
 
-function clearStatus() { document.getElementById('statusBox').classList.remove('show'); }
+function clearStatus() {
+  stopTicker();
+  document.getElementById('statusBox').classList.remove('show');
+}
 function showErr(msg) { const b = document.getElementById('errBox'); b.textContent = msg; b.classList.add('show'); }
 function clearErr() { document.getElementById('errBox').classList.remove('show'); }
 
@@ -1082,7 +1183,8 @@ async function hunt() {
   btn.disabled = true;
 
   try {
-    setStatus('<strong>Iniciando</strong> mapeamento...', 0);
+    setStatus('', 0);
+    startTickerLoop(0);
     const searchRes = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1094,7 +1196,7 @@ async function hunt() {
     }
     const { runId, datasetId } = await searchRes.json();
 
-    setStatus('<strong>Mapeando</strong> oportunidades no Google Maps...', 1);
+    setStatus('', 1);
     let places = null;
     for (let i = 0; i < 60; i++) {
       await new Promise(r => setTimeout(r, 4000));
@@ -1113,7 +1215,7 @@ async function hunt() {
       clearStatus(); btn.disabled = false; return;
     }
 
-    setStatus(`<strong>Analisando</strong> ${places.length} oportunidades com IA...`, 2);
+    setStatus('', 2);
     const analysisRes = await fetch(window.location.origin + '/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1121,17 +1223,27 @@ async function hunt() {
     });
     const analysis = await analysisRes.json();
 
-    setStatus('<strong>Consolidando</strong> inteligência comercial...', 3);
+    setStatus('', 3);
     const leadsRaw = places.map(p => {
       const socialLinks = p.socialLinks || [];
-      const instagram = socialLinks.find(s => s && s.toLowerCase().includes('instagram.com')) || '';
+
+      // Detecta Instagram em socialLinks
+      let instagram = socialLinks.find(s => s && s.toLowerCase().includes('instagram.com')) || '';
+
+      // Se não achou em socialLinks, verifica se o website é Instagram
+      let site = p.website || '';
+      if (!instagram && site.toLowerCase().includes('instagram.com')) {
+        instagram = site;
+        site = ''; // limpa o site para não mostrar botão "Site" errado
+      }
+
       return {
         nome: p.title || 'Sem nome',
         endereco: p.address || city,
         telefone: p.phone || '',
         avaliacao: p.totalScore ? p.totalScore.toFixed(1) : null,
         totalAvaliacoes: p.reviewsCount || 0,
-        site: p.website || '',
+        site,
         instagram
       };
     });
