@@ -494,7 +494,43 @@ header {
   50% { opacity: 0.5; }
 }
 
-/* ── ERROR ── */
+/* ── FILTERS ── */
+.filters-bar {
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.filters-bar.show { display: flex; }
+
+.filter-btn {
+  padding: 7px 16px;
+  background: var(--dark-3);
+  border: 1px solid var(--dark-5);
+  border-radius: 100px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted-2);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.22,1,0.36,1);
+  text-transform: uppercase;
+}
+
+.filter-btn:hover {
+  border-color: rgba(200,169,110,0.4);
+  color: var(--gold-2);
+  background: var(--gold-dim);
+}
+
+.filter-btn.active {
+  border-color: var(--gold);
+  color: var(--gold-2);
+  background: var(--gold-dim);
+  box-shadow: 0 0 12px rgba(200,169,110,0.12);
+}
 .error {
   display: none;
   background: rgba(248,113,113,0.06);
@@ -918,8 +954,18 @@ footer {
   <div class="results-meta" id="resultsMeta">
     <div>
       <div class="results-label" id="resultsLabel"></div>
-      <div class="results-sub">Toque no script para copiar</div>
+      <div class="results-sub" id="resultsCount">Toque no script para copiar</div>
     </div>
+  </div>
+
+  <div class="filters-bar" id="filtersBar">
+    <button class="filter-btn active" onclick="applyFilter(this,'all')">Todos</button>
+    <button class="filter-btn" onclick="applyFilter(this,'hot')">🔥 Quente</button>
+    <button class="filter-btn" onclick="applyFilter(this,'phone')">Com telefone</button>
+    <button class="filter-btn" onclick="applyFilter(this,'site')">Com site</button>
+    <button class="filter-btn" onclick="applyFilter(this,'instagram')">Com Instagram</button>
+    <button class="filter-btn" onclick="applyFilter(this,'nosite')">Sem site</button>
+    <button class="filter-btn" onclick="applyFilter(this,'nophone')">Sem telefone</button>
   </div>
 
   <div id="list"></div>
@@ -1059,7 +1105,45 @@ footer {
   animate();
 })();
 
-/* ── TILT 3D ── */
+/* ── FILTROS ── */
+let allLeads = [];
+let activeFilter = 'all';
+
+function applyFilter(btn, filter) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeFilter = filter;
+  renderLeads();
+}
+
+function getFilteredLeads() {
+  switch (activeFilter) {
+    case 'hot':       return allLeads.filter(l => l.pontuacao === 'alta');
+    case 'phone':     return allLeads.filter(l => l.telefone);
+    case 'site':      return allLeads.filter(l => l.site);
+    case 'instagram': return allLeads.filter(l => l.instagram);
+    case 'nosite':    return allLeads.filter(l => !l.site);
+    case 'nophone':   return allLeads.filter(l => !l.telefone);
+    default:          return allLeads;
+  }
+}
+
+function renderLeads() {
+  const filtered = getFilteredLeads();
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  filtered.forEach((lead, idx) => {
+    const div = document.createElement('div');
+    div.innerHTML = buildCard(lead, idx);
+    const card = div.firstChild;
+    list.appendChild(card);
+    initTilt(card);
+  });
+  document.getElementById('resultsCount').textContent =
+    filtered.length === allLeads.length
+      ? 'Toque no script para copiar'
+      : `${filtered.length} de ${allLeads.length} oportunidades`;
+}
 function initTilt(card) {
   card.addEventListener('mousemove', e => {
     const rect = card.getBoundingClientRect();
@@ -1199,6 +1283,7 @@ async function hunt() {
   clearErr();
   document.getElementById('list').innerHTML = '';
   document.getElementById('resultsMeta').classList.remove('show');
+  document.getElementById('filtersBar').classList.remove('show');
   document.getElementById('emptyBox').classList.remove('show');
   const btn = document.getElementById('searchBtn');
   btn.disabled = true;
@@ -1278,16 +1363,14 @@ async function hunt() {
       return { ...l, ...match };
     });
     clearStatus();
+    allLeads = final;
+    activeFilter = 'all';
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.filter-btn').classList.add('active');
     document.getElementById('resultsLabel').textContent = `${final.length} oportunidades — ${niche} em ${city}`;
     document.getElementById('resultsMeta').classList.add('show');
-    const list = document.getElementById('list');
-    final.forEach((lead, idx) => {
-      const div = document.createElement('div');
-      div.innerHTML = buildCard(lead, idx);
-      const card = div.firstChild;
-      list.appendChild(card);
-      initTilt(card);
-    });
+    document.getElementById('filtersBar').classList.add('show');
+    renderLeads();
 
   } catch (e) {
     clearStatus();
