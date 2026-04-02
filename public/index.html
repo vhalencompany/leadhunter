@@ -674,6 +674,17 @@ header {
 
 .no-phone { font-size: 12px; color: var(--muted); }
 
+.btn-ig {
+  background: rgba(193,53,132,0.08);
+  border: 1px solid rgba(193,53,132,0.25);
+  color: #C13584;
+}
+
+.btn-ig:hover {
+  background: rgba(193,53,132,0.15);
+  transform: translateY(-1px);
+}
+
 .scripts-toggle {
   width: 100%;
   background: transparent;
@@ -1111,14 +1122,19 @@ async function hunt() {
     const analysis = await analysisRes.json();
 
     setStatus('<strong>Consolidando</strong> inteligência comercial...', 3);
-    const leadsRaw = places.map(p => ({
-      nome: p.title || 'Sem nome',
-      endereco: p.address || city,
-      telefone: p.phone || '',
-      avaliacao: p.totalScore ? p.totalScore.toFixed(1) : null,
-      totalAvaliacoes: p.reviewsCount || 0,
-      site: p.website || ''
-    }));
+    const leadsRaw = places.map(p => {
+      const socialLinks = p.socialLinks || [];
+      const instagram = socialLinks.find(s => s && s.toLowerCase().includes('instagram.com')) || '';
+      return {
+        nome: p.title || 'Sem nome',
+        endereco: p.address || city,
+        telefone: p.phone || '',
+        avaliacao: p.totalScore ? p.totalScore.toFixed(1) : null,
+        totalAvaliacoes: p.reviewsCount || 0,
+        site: p.website || '',
+        instagram
+      };
+    });
     const analiseMap = {};
     (analysis.analises || []).forEach(a => {
       if (a.nome) analiseMap[a.nome.trim().toLowerCase()] = a;
@@ -1158,6 +1174,8 @@ function buildCard(l, i) {
     : `<span class="no-phone">📵 Sem telefone</span>`;
   const siteHtml = l.site ? `<a href="${l.site}" target="_blank" class="contact-btn btn-site">🌐 Site</a>` : '';
 
+  const igHtml = l.instagram ? `<a href="${l.instagram}" target="_blank" class="contact-btn btn-ig">📸 Instagram</a>` : '';
+
   return `<div class="card">
     <div class="card-inner" style="animation-delay:${delay}s">
       <div class="card-header">
@@ -1175,7 +1193,7 @@ function buildCard(l, i) {
           <div class="diag-label">Diagnóstico Estratégico</div>
           <div class="diag-text">${l.problemas || 'Analisando...'}</div>
         </div>
-        <div class="contact-row">${phoneHtml}${siteHtml}</div>
+        <div class="contact-row">${phoneHtml}${siteHtml}${igHtml}</div>
         <button class="scripts-toggle" onclick="tog(this,'sc${i}')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           VER ABORDAGENS
