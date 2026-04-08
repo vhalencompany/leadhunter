@@ -746,22 +746,44 @@ async function hunt() {
       const errData = await searchRes.json().catch(() => ({ error: 'Erro desconhecido' }));
       throw new Error(errData.error || 'Erro na busca.');
     }
-    const { google, instagram, igQty } = await searchRes.json();
+    const { google, igSearch, igQty, niche: searchNiche, city: searchCity } = await searchRes.json();
+    const niche = searchNiche || document.getElementById('nicheInput').value.trim();
+    const city  = searchCity  || document.getElementById('cityInput').value.trim();
 
     setStatus(1);
 
-    // ── POLLING — aguarda os dois terminarem ──
+    // ── POLLING — 3 fases: search → profile → done ──
     let places = null;
-    for (let i = 0; i < 60; i++) {
+    // Estado que evolui entre as iterações
+    let pollState = { google, igSearch, qty, igQty: igQty, niche, city };
+
+    for (let i = 0; i < 80; i++) {
       await new Promise(r => setTimeout(r, 4000));
       const stRes = await fetch(window.location.origin + '/api/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ google, instagram, qty, igQty })
+        body: JSON.stringify(pollState)
       });
       const stData = await stRes.json();
-      if (stData.status === 'done')   { places = stData.places; break; }
+
+      if (stData.status === 'done') {
+        places = stData.places;
+        break;
+      }
       if (stData.status === 'failed') throw new Error('Busca falhou: ' + stData.reason);
+
+      // Fase 2 — o status.js retornou igProfile, precisamos passá-lo no próximo poll
+      if (stData.phase === 2 && stData.igProfileRun) {
+        pollState = {
+          google,
+          igSearch,
+          igProfile: stData.igProfileRun,
+          qty,
+          igQty,
+          niche,
+          city
+        };
+      }
     }
 
     if (!places || places.length === 0) {
