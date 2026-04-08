@@ -33,55 +33,41 @@ export default async function handler(req, res) {
       }
     );
 
-    // ─── INSTAGRAM ───────────────────────────────────────────────────────────
-    // Busca múltiplas queries de perfis combinando nicho + cidade
-    // resultsType: 'details' retorna dados completos do perfil incluindo
-    // isBusinessAccount, businessCategoryName, followersCount, etc.
-    const nicheSlug = niche.toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .replace(/\s+/g, '');
-    const citySlug = city.toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .replace(/\s+/g, '');
-
-    // Queries de busca: nicho+cidade, nicho cidade, apenas nicho
-    // O actor busca por username/nome — retorna perfis que correspondem
-    const searchQueries = [
-      `${niche} ${city}`,
-      `${nicheSlug}${citySlug}`,
-      `${niche} ${citySlug}`,
-    ];
-
-    const instagramPromise = fetch(
-      `https://api.apify.com/v2/acts/apify~instagram-scraper/runs?token=${APIFY}`,
+    // ─── INSTAGRAM SEARCH — Step 1 ────────────────────────────────────────────
+    // Busca por "place" com nicho + cidade.
+    // Retorna negócios locais registrados no Instagram com endereço e categoria.
+    // Os slugs retornados serão usados no Step 2 (profile scraper).
+    const igSearchPromise = fetch(
+      `https://api.apify.com/v2/acts/apify~instagram-search-scraper/runs?token=${APIFY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          searchQueries,
-          searchType: 'user',          // busca perfis, não posts
-          resultsType: 'details',      // retorna dados completos do perfil
-          resultsLimit: IG_FIXED_QTY * 4, // busca mais para filtrar depois
-          addParentData: false
+          searchQueries: [
+            `${niche} ${city}`,
+            `${niche}`,
+          ],
+          searchType: 'place',         // busca lugares/negócios registrados
+          resultsPerQuery: IG_FIXED_QTY * 3 // busca mais para filtrar depois
         })
       }
     );
 
     // ─── DISPARA EM PARALELO ─────────────────────────────────────────────────
-    const [googleRes, instagramRes] = await Promise.all([googlePromise, instagramPromise]);
+    const [googleRes, igSearchRes] = await Promise.all([googlePromise, igSearchPromise]);
 
     if (!googleRes.ok) {
-      const errText = await googleRes.text();
-      throw new Error(`Apify Google error ${googleRes.status}: ${errText}`);
+      const err = await googleRes.text();
+      throw new Error(`Apify Google error ${googleRes.status}: ${err}`);
     }
-    if (!instagramRes.ok) {
-      const errText = await instagramRes.text();
-      throw new Error(`Apify Instagram error ${instagramRes.status}: ${errText}`);
+    if (!igSearchRes.ok) {
+      const err = await igSearchRes.text();
+      throw new Error(`Apify Instagram Search error ${igSearchRes.status}: ${err}`);
     }
 
-    const [googleData, instagramData] = await Promise.all([
+    const [googleData, igSearchData] = await Promise.all([
       googleRes.json(),
-      instagramRes.json()
+      igSearchRes.json()
     ]);
 
     return res.status(200).json({
@@ -89,12 +75,13 @@ export default async function handler(req, res) {
         runId: googleData.data.id,
         datasetId: googleData.data.defaultDatasetId
       },
-      instagram: {
-        runId: instagramData.data.id,
-        datasetId: instagramData.data.defaultDatasetId
+      igSearch: {
+        runId: igSearchData.data.id,
+        datasetId: igSearchData.data.defaultDatasetId
       },
       igQty: IG_FIXED_QTY,
-      niche // passa o nicho para o status.js usar no filtro
+      niche,
+      city
     });
 
   } catch (e) {
