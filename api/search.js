@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   const APIFY = process.env.APIFY_TOKEN;
   if (!APIFY) return res.status(500).json({ error: 'Token não configurado.' });
 
-  const IG_FIXED_QTY = 10; // Instagram fixo em 10 durante validação
+  const IG_FIXED_QTY = 10;
 
   try {
     // ─── GOOGLE MAPS ─────────────────────────────────────────────────────────
@@ -34,17 +34,22 @@ export default async function handler(req, res) {
     );
 
     // ─── INSTAGRAM ───────────────────────────────────────────────────────────
+    // Busca múltiplas queries de perfis combinando nicho + cidade
+    // resultsType: 'details' retorna dados completos do perfil incluindo
+    // isBusinessAccount, businessCategoryName, followersCount, etc.
     const nicheSlug = niche.toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/\s+/g, '');
     const citySlug = city.toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/\s+/g, '');
-    const hashtags = [
+
+    // Queries de busca: nicho+cidade, nicho cidade, apenas nicho
+    // O actor busca por username/nome — retorna perfis que correspondem
+    const searchQueries = [
+      `${niche} ${city}`,
       `${nicheSlug}${citySlug}`,
-      `${nicheSlug}`,
-      `${nicheSlug}brasil`,
-      `${citySlug}`,
+      `${niche} ${citySlug}`,
     ];
 
     const instagramPromise = fetch(
@@ -53,12 +58,11 @@ export default async function handler(req, res) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          directUrls: hashtags.map(h => `https://www.instagram.com/explore/tags/${h}/`),
-          resultsType: 'posts',
-          resultsLimit: IG_FIXED_QTY * 3,
-          addParentData: true,
-          searchType: 'hashtag',
-          searchLimit: Math.ceil(IG_FIXED_QTY / hashtags.length)
+          searchQueries,
+          searchType: 'user',          // busca perfis, não posts
+          resultsType: 'details',      // retorna dados completos do perfil
+          resultsLimit: IG_FIXED_QTY * 4, // busca mais para filtrar depois
+          addParentData: false
         })
       }
     );
@@ -89,7 +93,8 @@ export default async function handler(req, res) {
         runId: instagramData.data.id,
         datasetId: instagramData.data.defaultDatasetId
       },
-      igQty: IG_FIXED_QTY
+      igQty: IG_FIXED_QTY,
+      niche // passa o nicho para o status.js usar no filtro
     });
 
   } catch (e) {
