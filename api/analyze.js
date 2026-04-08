@@ -7,29 +7,35 @@ export default async function handler(req, res) {
   const { places, niche, city, offer } = req.body;
   const ANTHROPIC = process.env.ANTHROPIC_API_KEY;
 
-  // ─── DETECTA ORIGEM DOS LEADS ─────────────────────────────────────────────
-  const source = places[0]?.source === 'instagram' ? 'instagram' : 'google';
+  // ─── SEPARA POR FONTE ─────────────────────────────────────────────────────
+  const googlePlaces    = places.filter(p => p.source !== 'instagram');
+  const instagramPlaces = places.filter(p => p.source === 'instagram');
 
-  // ─── NORMALIZA LEADS ──────────────────────────────────────────────────────
-  const leadsRaw = places.map(p => {
-    if (source === 'google') {
-      return {
-        nome: p.title || 'Sem nome',
-        categoria: p.categoryName || niche,
-        endereco: p.address || city,
-        telefone: p.phone || '',
-        avaliacao: p.totalScore ? p.totalScore.toFixed(1) : null,
-        totalAvaliacoes: p.reviewsCount || 0,
-        site: p.website || '',
-        source: 'google'
-      };
-    }
+  // ─── CTA ──────────────────────────────────────────────────────────────────
+  const ctaLine = offer
+    ? `Você tem disponibilidade amanhã ou quinta-feira para eu te mostrar como resolver isso com ${offer}?`
+    : `Você tem disponibilidade amanhã ou quinta-feira para eu te mostrar exatamente o que está acontecendo e o que pode ser feito?`;
 
-    // Instagram — scoring diferente
+  const systemPrompt = 'Retorne APENAS JSON puro válido. Sem markdown. Sem backticks. Sem texto antes ou depois do JSON.';
+
+  // ─── NORMALIZA ────────────────────────────────────────────────────────────
+  function normalizeGoogle(p) {
+    return {
+      nome: p.title || 'Sem nome',
+      categoria: p.categoryName || niche,
+      endereco: p.address || city,
+      telefone: p.phone || '',
+      avaliacao: p.totalScore ? p.totalScore.toFixed(1) : null,
+      totalAvaliacoes: p.reviewsCount || 0,
+      site: p.website || '',
+      source: 'google'
+    };
+  }
+
+  function normalizeInstagram(p) {
     const daysSinceLastPost = p.lastPostDate
       ? Math.floor((Date.now() - new Date(p.lastPostDate)) / (1000 * 60 * 60 * 24))
       : 999;
-
     return {
       nome: p.title || p.instagramHandle || 'Sem nome',
       categoria: p.categoryName || niche,
@@ -44,16 +50,9 @@ export default async function handler(req, res) {
       curtidas: p.likesCount || 0,
       source: 'instagram'
     };
-  });
+  }
 
-  // ─── CTA ──────────────────────────────────────────────────────────────────
-  const ctaLine = offer
-    ? `Você tem disponibilidade amanhã ou quinta-feira para eu te mostrar como resolver isso com ${offer}?`
-    : `Você tem disponibilidade amanhã ou quinta-feira para eu te mostrar exatamente o que está acontecendo e o que pode ser feito?`;
-
-  // ─── PROMPTS POR FONTE ────────────────────────────────────────────────────
-  const systemPrompt = 'Retorne APENAS JSON puro válido. Sem markdown. Sem backticks. Sem texto antes ou depois do JSON.';
-
+  // ─── PROMPTS ──────────────────────────────────────────────────────────────
   function buildGooglePrompt(batch) {
     return `Você é um especialista em prospecção B2B e diagnóstico de presença digital de pequenos negócios brasileiros.
 Analise cada negócio abaixo e gere diagnóstico e abordagem profissional. Nunca use emojis. Tom direto, sem elogios vazios.
@@ -103,21 +102,12 @@ Retorne EXATAMENTE este JSON com uma entrada por negócio na mesma ordem:
 {"analises":[{"nome":"nome exato do negócio","problemas":"Frase 1. Frase 2.","pontuacao":"alta ou media","comentario":"comentário Instagram sem emoji","dm":"DM WhatsApp completa com gancho + body + CTA"}]}`;
   }
 
-  // ─── BATCHING ─────────────────────────────────────────────────────────────
-  const BATCH_SIZE = 20;
-  const batches = [];
-  for (let i = 0; i < leadsRaw.length; i += BATCH_SIZE) {
-    batches.push(leadsRaw.slice(i, i + BATCH_SIZE));
-  }
-
-  try {
+  // ─── ANÁLISE EM LOTES ─────────────────────────────────────────────────────
+  async function analyzeBatches(leads, promptFn) {
+    const BATCH_SIZE = 20;
     const results = [];
-
-    for (const batch of batches) {
-      const prompt = source === 'instagram'
-        ? buildInstagramPrompt(batch)
-        : buildGooglePrompt(batch);
-
+    for (let i = 0; i < leads.length; i += BATCH_SIZE) {
+      const batch = leads.slice(i, i + BATCH_SIZE);
       const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -129,25 +119,37 @@ Retorne EXATAMENTE este JSON com uma entrada por negócio na mesma ordem:
           model: 'claude-sonnet-4-5',
           max_tokens: 6000,
           system: systemPrompt,
-          messages: [{ role: 'user', content: prompt }]
+          messages: [{ role: 'user', content: promptFn(batch) }]
         })
       });
-
       const data = await aiRes.json();
       const raw = data.content.map(i => i.text || '').join('');
       let parsed = null;
-
       try {
         parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
       } catch {
         const m = raw.match(/\{[\s\S]*\}/);
         if (m) parsed = JSON.parse(m[0]);
       }
-
       if (parsed?.analises) results.push(...parsed.analises);
     }
+    return results;
+  }
 
-    return res.status(200).json({ analises: results, source });
+  try {
+    // ─── ANALISA AS DUAS FONTES EM PARALELO ──────────────────────────────────
+    const [googleAnalises, instagramAnalises] = await Promise.all([
+      googlePlaces.length > 0
+        ? analyzeBatches(googlePlaces.map(normalizeGoogle), buildGooglePrompt)
+        : Promise.resolve([]),
+      instagramPlaces.length > 0
+        ? analyzeBatches(instagramPlaces.map(normalizeInstagram), buildInstagramPrompt)
+        : Promise.resolve([])
+    ]);
+
+    return res.status(200).json({
+      analises: [...googleAnalises, ...instagramAnalises]
+    });
 
   } catch (e) {
     return res.status(500).json({ error: e.message });
