@@ -4,44 +4,149 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { google, instagram, qty, igQty, niche } = req.body;
+  const { google, igSearch, igProfile, qty, igQty, niche, city } = req.body;
   const APIFY = process.env.APIFY_TOKEN;
 
-  if (!google?.runId || !instagram?.runId) {
-    return res.status(400).json({ error: 'google.runId e instagram.runId são obrigatórios.' });
+  if (!google?.runId || !igSearch?.runId) {
+    return res.status(400).json({ error: 'google.runId e igSearch.runId são obrigatórios.' });
   }
 
+  const FAILED = ['FAILED', 'ABORTED', 'TIMED-OUT'];
+
   try {
-    const [googleStatus, instagramStatus] = await Promise.all([
+    // ═══════════════════════════════════════════════════════════════════════
+    // FASE 1 — polling do Google + igSearch em paralelo
+    // ═══════════════════════════════════════════════════════════════════════
+    if (!igProfile) {
+      const [googleStatus, igSearchStatus] = await Promise.all([
+        fetch(`https://api.apify.com/v2/actor-runs/${google.runId}?token=${APIFY}`).then(r => r.json()),
+        fetch(`https://api.apify.com/v2/actor-runs/${igSearch.runId}?token=${APIFY}`).then(r => r.json())
+      ]);
+
+      const gStatus = googleStatus?.data?.status;
+      const sStatus = igSearchStatus?.data?.status;
+
+      console.log(`[fase1] google=${gStatus} igSearch=${sStatus}`);
+
+      if (FAILED.includes(gStatus)) {
+        return res.status(200).json({ status: 'failed', reason: `Google: ${gStatus}` });
+      }
+
+      // Ainda rodando
+      if (gStatus !== 'SUCCEEDED' || sStatus !== 'SUCCEEDED') {
+        return res.status(200).json({
+          status: 'running',
+          phase: 1,
+          google: gStatus,
+          igSearch: sStatus
+        });
+      }
+
+      // ─── Ambos terminaram — busca resultados do igSearch ─────────────────
+      const igSearchItems = await fetch(
+        `https://api.apify.com/v2/datasets/${igSearch.datasetId}/items?token=${APIFY}&limit=${parseInt(igQty) * 6}`
+      ).then(r => r.json());
+
+      // Extrai slugs/usernames dos places encontrados
+      const slugs = extractSlugsFromPlaces(igSearchItems, niche, parseInt(igQty));
+
+      console.log(`[fase1] igSearch retornou ${igSearchItems.length} places, ${slugs.length} slugs válidos`);
+
+      // Se não encontrou nenhum perfil no Instagram, finaliza só com Google
+      if (slugs.length === 0) {
+        const googleItems = await fetch(
+          `https://api.apify.com/v2/datasets/${google.datasetId}/items?token=${APIFY}&limit=${parseInt(qty)}`
+        ).then(r => r.json());
+
+        return res.status(200).json({
+          status: 'done',
+          places: googleItems.map(p => ({ ...p, source: 'google' }))
+        });
+      }
+
+      // ─── Dispara Step 2 — instagram-profile-scraper com os slugs ─────────
+      const profileRes = await fetch(
+        `https://api.apify.com/v2/acts/apify~instagram-profile-scraper/runs?token=${APIFY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            usernames: slugs // array de usernames
+          })
+        }
+      );
+
+      if (!profileRes.ok) {
+        const err = await profileRes.text();
+        console.error(`[fase1] profile scraper error: ${err}`);
+        // Falhou ao buscar perfis — retorna só Google
+        const googleItems = await fetch(
+          `https://api.apify.com/v2/datasets/${google.datasetId}/items?token=${APIFY}&limit=${parseInt(qty)}`
+        ).then(r => r.json());
+
+        return res.status(200).json({
+          status: 'done',
+          places: googleItems.map(p => ({ ...p, source: 'google' }))
+        });
+      }
+
+      const profileData = await profileRes.json();
+
+      // Retorna fase 2 para o frontend continuar o polling
+      return res.status(200).json({
+        status: 'running',
+        phase: 2,
+        google: { runId: google.runId, datasetId: google.datasetId },
+        igSearch: { runId: igSearch.runId, datasetId: igSearch.datasetId },
+        igProfile: {
+          runId: profileData.data.id,
+          datasetId: profileData.data.defaultDatasetId
+        },
+        qty,
+        igQty,
+        niche,
+        city
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // FASE 2 — polling do igProfile + Google em paralelo
+    // ═══════════════════════════════════════════════════════════════════════
+    const [googleStatus, igProfileStatus] = await Promise.all([
       fetch(`https://api.apify.com/v2/actor-runs/${google.runId}?token=${APIFY}`).then(r => r.json()),
-      fetch(`https://api.apify.com/v2/actor-runs/${instagram.runId}?token=${APIFY}`).then(r => r.json())
+      fetch(`https://api.apify.com/v2/actor-runs/${igProfile.runId}?token=${APIFY}`).then(r => r.json())
     ]);
 
     const gStatus = googleStatus?.data?.status;
-    const iStatus = instagramStatus?.data?.status;
+    const pStatus = igProfileStatus?.data?.status;
 
-    console.log(`[status] google=${gStatus} instagram=${iStatus}`);
-
-    const FAILED = ['FAILED', 'ABORTED', 'TIMED-OUT'];
+    console.log(`[fase2] google=${gStatus} igProfile=${pStatus}`);
 
     if (FAILED.includes(gStatus)) {
       return res.status(200).json({ status: 'failed', reason: `Google: ${gStatus}` });
     }
 
-    if (gStatus !== 'SUCCEEDED' || iStatus !== 'SUCCEEDED') {
-      return res.status(200).json({ status: 'running', google: gStatus, instagram: iStatus });
+    if (gStatus !== 'SUCCEEDED' || pStatus !== 'SUCCEEDED') {
+      return res.status(200).json({
+        status: 'running',
+        phase: 2,
+        google: gStatus,
+        igProfile: pStatus,
+        // reenvia igProfile para o frontend manter no estado
+        igProfileRun: igProfile
+      });
     }
 
-    // ─── BUSCA OS DADOS ───────────────────────────────────────────────────────
-    const [googleItems, instagramItems] = await Promise.all([
+    // ─── Ambos terminaram — monta lista final ────────────────────────────────
+    const [googleItems, igProfileItems] = await Promise.all([
       fetch(`https://api.apify.com/v2/datasets/${google.datasetId}/items?token=${APIFY}&limit=${parseInt(qty)}`).then(r => r.json()),
-      fetch(`https://api.apify.com/v2/datasets/${instagram.datasetId}/items?token=${APIFY}&limit=${parseInt(igQty) * 8}`).then(r => r.json())
+      fetch(`https://api.apify.com/v2/datasets/${igProfile.datasetId}/items?token=${APIFY}&limit=${parseInt(igQty) * 3}`).then(r => r.json())
     ]);
 
     const googleLeads = googleItems.map(p => ({ ...p, source: 'google' }));
-    const igLeads = normalizeInstagramProfiles(instagramItems, parseInt(igQty), niche);
+    const igLeads = normalizeProfiles(igProfileItems, parseInt(igQty), niche);
 
-    console.log(`[status] google=${googleLeads.length} instagram=${igLeads.length} (de ${instagramItems.length} perfis brutos)`);
+    console.log(`[fase2] google=${googleLeads.length} instagram=${igLeads.length}`);
 
     return res.status(200).json({
       status: 'done',
@@ -54,81 +159,76 @@ export default async function handler(req, res) {
   }
 }
 
-// ─── FILTROS B2B ──────────────────────────────────────────────────────────────
+// ─── EXTRAI SLUGS DOS PLACES DO INSTAGRAM SEARCH SCRAPER ─────────────────────
+// O instagram-search-scraper retorna lugares com campo "slug" ou "username"
+function extractSlugsFromPlaces(places, niche, qty) {
+  const nicheWords = (niche || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .split(/\s+/).filter(w => w.length > 3);
 
-// Padrões que indicam conta pessoal / B2C — descarta
-const PERSONAL_PATTERNS = [
-  /\b(mafioso|ofc|pvt|personal|lifestyle|influencer|blogger|gamer|streamer|youtuber|tiktoker)\b/i,
-  /\b(minha vida|meu dia|meus rolê|squad|gang|vlogs?)\b/i,
-];
+  const slugs = [];
+  const seen = new Set();
 
-// Emojis que raramente aparecem em perfis B2B legítimos
-const SUSPICIOUS_EMOJI = /[\u{1F300}-\u{1F9FF}\u{2702}-\u{27B0}]{3,}/u;
+  for (const place of places) {
+    // O search scraper retorna slug do perfil associado ao lugar
+    const slug = place.username || place.slug || place.profileUrl?.split('/').filter(Boolean).pop();
+    if (!slug || seen.has(slug)) continue;
 
-// Categorias do Instagram que confirmam negócio
-const BUSINESS_CATEGORIES = [
-  'beauty', 'health', 'medical', 'dental', 'clinic', 'restaurant', 'food',
-  'gym', 'fitness', 'pet', 'real estate', 'accounting', 'law', 'lawyer',
-  'clothing', 'fashion', 'store', 'shop', 'salon', 'spa', 'barber',
-  'escola', 'school', 'education', 'consultoria', 'agência', 'empresa',
-  'saúde', 'beleza', 'academia', 'clínica', 'restaurante', 'loja', 'imobiliária'
-];
+    // Filtra lugares que parecem negócios do nicho
+    const name = (place.name || place.title || '').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const category = (place.category || place.businessCategory || '').toLowerCase();
 
-function isLikelyB2B(profile, niche) {
-  const name    = (profile.fullName || profile.username || '').toLowerCase();
-  const bio     = (profile.biography || '').toLowerCase();
-  const category= (profile.businessCategoryName || '').toLowerCase();
-  const nicheLC = (niche || '').toLowerCase();
+    const matchesNiche = nicheWords.some(w => name.includes(w) || category.includes(w));
 
-  // ── Descarta contas não-business explicitamente ──
-  if (profile.isBusinessAccount === false) return false;
+    // Inclui se bate com nicho, ou se não tem como verificar (inclui por padrão)
+    if (matchesNiche || nicheWords.length === 0) {
+      seen.add(slug);
+      slugs.push(slug);
+    }
 
-  // ── Descarta contas verificadas (grandes marcas, celebridades) ──
-  if (profile.verified === true) return false;
+    if (slugs.length >= qty * 2) break; // busca o dobro para ter margem de filtro
+  }
 
-  // ── Descarta padrões de conta pessoal ──
-  const fullText = `${name} ${bio}`;
-  if (PERSONAL_PATTERNS.some(p => p.test(fullText))) return false;
-
-  // ── Descarta nomes com excesso de emojis (ex: "Sr. Mafioso OFC🜲") ──
-  if (SUSPICIOUS_EMOJI.test(profile.fullName || '')) return false;
-
-  // ── Descarta perfis privados ──
-  if (profile.isPrivate === true) return false;
-
-  // ── Bonus: categoria do Instagram bate com negócio ──
-  const categoryMatch = BUSINESS_CATEGORIES.some(c => category.includes(c));
-
-  // ── Bonus: nicho aparece no nome ou bio ──
-  const nicheWords = nicheLC.split(/\s+/);
-  const nicheMatch = nicheWords.some(w => w.length > 3 && (name.includes(w) || bio.includes(w)));
-
-  // Precisa de pelo menos um sinal positivo (categoria ou nicho no nome/bio)
-  // a menos que seja explicitamente marcado como business account
-  if (profile.isBusinessAccount === true) return true;
-  return categoryMatch || nicheMatch;
+  return slugs;
 }
 
-function normalizeInstagramProfiles(profiles, qty, niche) {
+// ─── NORMALIZA PERFIS DO INSTAGRAM PROFILE SCRAPER ───────────────────────────
+function normalizeProfiles(profiles, qty, niche) {
+  const nicheWords = (niche || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .split(/\s+/).filter(w => w.length > 3);
+
+  const PERSONAL_PATTERNS = [
+    /\b(mafioso|ofc|pvt|personal|lifestyle|influencer|blogger|gamer|streamer|youtuber|tiktoker)\b/i,
+    /\b(minha vida|meu dia|squad|gang|vlogs?)\b/i,
+  ];
+
   const seen = new Set();
   const leads = [];
 
   for (const p of profiles) {
-    // Deduplicação por username
-    const username = p.username || p.ownerUsername;
+    const username = p.username;
     if (!username || seen.has(username)) continue;
 
-    // Filtro B2B
-    if (!isLikelyB2B(p, niche)) continue;
+    // Descarta contas privadas
+    if (p.isPrivate === true) continue;
+
+    // Descarta contas verificadas (grandes marcas)
+    if (p.verified === true || p.isVerified === true) continue;
+
+    // Descarta padrões pessoais
+    const fullText = `${p.fullName || ''} ${p.biography || ''}`.toLowerCase();
+    if (PERSONAL_PATTERNS.some(pat => pat.test(fullText))) continue;
 
     seen.add(username);
 
-    // ── Campos — o actor retorna detalhes do perfil direto ──
-    const followers  = p.followersCount ?? p.followersCount ?? p.followers ?? 0;
+    // Campos do instagram-profile-scraper
+    const followers  = p.followersCount ?? p.followers ?? 0;
     const postsCount = p.postsCount ?? p.mediaCount ?? 0;
-    const site       = p.externalUrl || p.websiteUrl || extractUrlFromBio(p.biography || '');
-    const phone      = p.publicPhoneNumber || extractPhoneFromBio(p.biography || '');
-    const lastPost   = p.latestIgtvVideo?.timestamp || p.latestPost?.timestamp || null;
+    const site       = p.externalUrl || p.websiteUrl || extractUrl(p.biography || '');
+    const phone      = p.publicPhoneNumber || extractPhone(p.biography || '');
+    const lastPost   = p.latestPosts?.[0]?.timestamp || null;
 
     leads.push({
       title:           p.fullName || username,
@@ -144,8 +244,6 @@ function normalizeInstagramProfiles(profiles, qty, niche) {
       postsCount,
       bio:             p.biography || '',
       lastPostDate:    lastPost,
-      likesCount:      0,
-      commentsCount:   0,
       source:          'instagram'
     });
 
@@ -155,12 +253,12 @@ function normalizeInstagramProfiles(profiles, qty, niche) {
   return leads;
 }
 
-function extractUrlFromBio(bio) {
-  const match = bio.match(/https?:\/\/[^\s]+/);
-  return match ? match[0] : '';
+function extractUrl(bio) {
+  const m = bio.match(/https?:\/\/[^\s]+/);
+  return m ? m[0] : '';
 }
 
-function extractPhoneFromBio(bio) {
-  const match = bio.match(/(\(?\d{2}\)?\s?[\d\s\-]{8,13})/);
-  return match ? match[0].trim() : '';
+function extractPhone(bio) {
+  const m = bio.match(/(\(?\d{2}\)?\s?[\d\s\-]{8,13})/);
+  return m ? m[0].trim() : '';
 }
