@@ -4,42 +4,57 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { runId, datasetId, qty, source = 'google' } = req.body;
+  const { google, instagram, qty, igQty } = req.body;
   const APIFY = process.env.APIFY_TOKEN;
 
-  if (!runId || !datasetId) {
-    return res.status(400).json({ error: 'runId e datasetId são obrigatórios.' });
+  if (!google?.runId || !instagram?.runId) {
+    return res.status(400).json({ error: 'google.runId e instagram.runId são obrigatórios.' });
   }
 
   try {
-    const st = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY}`);
-    const stData = await st.json();
-    const status = stData?.data?.status;
-    console.log(`[status] runId=${runId} source=${source} status=${status}`);
+    // ─── POLLING DOS DOIS EM PARALELO ────────────────────────────────────────
+    const [googleStatus, instagramStatus] = await Promise.all([
+      fetch(`https://api.apify.com/v2/actor-runs/${google.runId}?token=${APIFY}`).then(r => r.json()),
+      fetch(`https://api.apify.com/v2/actor-runs/${instagram.runId}?token=${APIFY}`).then(r => r.json())
+    ]);
 
-    if (status === 'SUCCEEDED') {
-      const itemsRes = await fetch(
-        `https://api.apify.com/v2/datasets/${datasetId}/items?token=${APIFY}&limit=${parseInt(qty) * 5}`
-      );
-      const rawItems = await itemsRes.json();
+    const gStatus = googleStatus?.data?.status;
+    const iStatus = instagramStatus?.data?.status;
 
-      // ─── GOOGLE: retorna direto como antes ──────────────────────────────
-      if (source === 'google') {
-        return res.status(200).json({ status: 'done', places: rawItems, source: 'google' });
-      }
+    console.log(`[status] google=${gStatus} instagram=${iStatus}`);
 
-      // ─── INSTAGRAM: normaliza posts → perfis únicos de negócios ────────
-      if (source === 'instagram') {
-        const places = normalizeInstagramLeads(rawItems, parseInt(qty));
-        return res.status(200).json({ status: 'done', places, source: 'instagram' });
-      }
+    const FAILED = ['FAILED', 'ABORTED', 'TIMED-OUT'];
+
+    // Se Google falhou, aborta tudo
+    if (FAILED.includes(gStatus)) {
+      return res.status(200).json({ status: 'failed', reason: `Google: ${gStatus}` });
     }
 
-    if (['FAILED', 'ABORTED', 'TIMED-OUT'].includes(status)) {
-      return res.status(200).json({ status: 'failed', reason: status });
+    // Ainda rodando
+    if (gStatus !== 'SUCCEEDED' || iStatus !== 'SUCCEEDED') {
+      return res.status(200).json({
+        status: 'running',
+        google: gStatus,
+        instagram: iStatus
+      });
     }
 
-    return res.status(200).json({ status: 'running' });
+    // ─── AMBOS SUCCEEDED — busca os dados ───────────────────────────────────
+    const [googleItems, instagramItems] = await Promise.all([
+      fetch(`https://api.apify.com/v2/datasets/${google.datasetId}/items?token=${APIFY}&limit=${parseInt(qty)}`).then(r => r.json()),
+      fetch(`https://api.apify.com/v2/datasets/${instagram.datasetId}/items?token=${APIFY}&limit=${parseInt(igQty) * 5}`).then(r => r.json())
+    ]);
+
+    // Normaliza Instagram
+    const igLeads = normalizeInstagramLeads(instagramItems, parseInt(igQty));
+
+    // Marca origem nos leads do Google
+    const googleLeads = googleItems.map(p => ({ ...p, source: 'google' }));
+
+    return res.status(200).json({
+      status: 'done',
+      places: [...googleLeads, ...igLeads]
+    });
 
   } catch (e) {
     console.error('[status error]', e.message);
@@ -47,48 +62,39 @@ export default async function handler(req, res) {
   }
 }
 
-// ─── NORMALIZAÇÃO INSTAGRAM → formato compatível com Google Maps ─────────────
-// O actor do Instagram retorna posts. Precisamos extrair perfis únicos de negócios.
+// ─── NORMALIZAÇÃO INSTAGRAM ───────────────────────────────────────────────────
 function normalizeInstagramLeads(posts, qty) {
   const seen = new Set();
   const leads = [];
 
   for (const post of posts) {
-    // Pula se não tem dados do owner/perfil
     const owner = post.ownerFullName || post.ownerUsername;
     if (!owner || seen.has(post.ownerUsername)) continue;
 
-    // Filtra apenas contas business ou creator (mais provável ser negócio)
-    // Se não tiver essa info, inclui mesmo assim
     const isLikelyBusiness =
       post.isBusinessAccount !== false &&
-      !post.isVerified; // verificadas geralmente são grandes marcas, não ICP
+      !post.isVerified;
 
     if (!isLikelyBusiness) continue;
 
     seen.add(post.ownerUsername);
 
-    // Extrai site da bio se disponível
     const site = post.ownerBiography
       ? extractUrlFromBio(post.ownerBiography)
       : post.ownerExternalUrl || '';
 
-    // Extrai telefone da bio se disponível
     const telefone = post.ownerBiography
       ? extractPhoneFromBio(post.ownerBiography)
       : post.ownerPublicPhoneNumber || '';
 
     leads.push({
-      // Campos compatíveis com Google Maps (usados no analyze.js)
       title: post.ownerFullName || post.ownerUsername,
       categoryName: post.ownerBusinessCategoryName || 'Instagram Business',
       address: post.locationName || '',
       phone: telefone,
       website: site,
-      totalScore: null,       // Instagram não tem nota
-      reviewsCount: 0,        // Instagram não tem avaliações
-
-      // Campos extras do Instagram (usados no scoring e análise)
+      totalScore: null,
+      reviewsCount: 0,
       instagramHandle: post.ownerUsername,
       instagramUrl: `https://www.instagram.com/${post.ownerUsername}/`,
       followers: post.ownerFollowersCount || 0,
@@ -97,8 +103,6 @@ function normalizeInstagramLeads(posts, qty) {
       lastPostDate: post.timestamp || null,
       likesCount: post.likesCount || 0,
       commentsCount: post.commentsCount || 0,
-
-      // Flag de origem
       source: 'instagram'
     });
 
