@@ -746,16 +746,14 @@ async function hunt() {
       const errData = await searchRes.json().catch(() => ({ error: 'Erro desconhecido' }));
       throw new Error(errData.error || 'Erro na busca.');
     }
-    const { google, igSearch, igQty, niche: searchNiche, city: searchCity } = await searchRes.json();
-    const niche = searchNiche || document.getElementById('nicheInput').value.trim();
-    const city  = searchCity  || document.getElementById('cityInput').value.trim();
+    const { google, igSearch, igQty } = await searchRes.json();
 
     setStatus(1);
 
     // ── POLLING — 3 fases: search → profile → done ──
     let places = null;
-    // Estado que evolui entre as iterações
-    let pollState = { google, igSearch, qty, igQty: igQty, niche, city };
+    let igProfileRun = null; // guarda o run do profile scraper quando vier
+    let pollState = { google, igSearch, qty, igQty, niche, city };
 
     for (let i = 0; i < 80; i++) {
       await new Promise(r => setTimeout(r, 4000));
@@ -766,23 +764,16 @@ async function hunt() {
       });
       const stData = await stRes.json();
 
-      if (stData.status === 'done') {
-        places = stData.places;
-        break;
-      }
+      if (stData.status === 'done') { places = stData.places; break; }
       if (stData.status === 'failed') throw new Error('Busca falhou: ' + stData.reason);
 
-      // Fase 2 — o status.js retornou igProfile, precisamos passá-lo no próximo poll
-      if (stData.phase === 2 && stData.igProfileRun) {
-        pollState = {
-          google,
-          igSearch,
-          igProfile: stData.igProfileRun,
-          qty,
-          igQty,
-          niche,
-          city
-        };
+      // Fase 2 — status.js disparou o profile scraper e retornou igProfileRun
+      if (stData.igProfileRun && !igProfileRun) {
+        igProfileRun = stData.igProfileRun;
+      }
+      // A partir da fase 2, sempre envia igProfile no pollState
+      if (igProfileRun) {
+        pollState = { google, igSearch, igProfile: igProfileRun, qty, igQty, niche, city };
       }
     }
 
@@ -833,11 +824,19 @@ async function hunt() {
       };
     });
 
+    // Separa leads por fonte para mapear análises corretamente
+    const googleLeads = leadsRaw.filter(l => l.source === 'google');
+    const igLeads     = leadsRaw.filter(l => l.source === 'instagram');
+
     const analiseMap = {};
-    (analysis.analises || []).forEach(a => { if (a.nome) analiseMap[a.nome.trim().toLowerCase()] = a; });
-    const final = leadsRaw.map((l, idx) => {
+    (analysis.analises || []).forEach(a => {
+      if (a.nome) analiseMap[a.nome.trim().toLowerCase()] = a;
+    });
+
+    const final = leadsRaw.map(l => {
       const key = (l.nome || '').trim().toLowerCase();
-      const match = analiseMap[key] || analysis.analises?.[idx] || {};
+      // Tenta bater pelo nome exato primeiro
+      const match = analiseMap[key] || {};
       return { ...l, ...match };
     });
 
