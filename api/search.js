@@ -9,11 +9,8 @@ export default async function handler(req, res) {
   const APIFY = process.env.APIFY_TOKEN;
   if (!APIFY) return res.status(500).json({ error: 'Token não configurado.' });
 
-  const IG_FIXED_QTY = 10;
-
   try {
-    // ─── GOOGLE MAPS ─────────────────────────────────────────────────────────
-    const googlePromise = fetch(
+    const runRes = await fetch(
       `https://api.apify.com/v2/acts/compass~crawler-google-places/runs?token=${APIFY}`,
       {
         method: 'POST',
@@ -33,56 +30,14 @@ export default async function handler(req, res) {
       }
     );
 
-    // ─── INSTAGRAM SEARCH — Step 1 ────────────────────────────────────────────
-    // Busca por "place" com nicho + cidade.
-    // Retorna negócios locais registrados no Instagram com endereço e categoria.
-    // Os slugs retornados serão usados no Step 2 (profile scraper).
-    const igSearchPromise = fetch(
-      `https://api.apify.com/v2/acts/apify~instagram-search-scraper/runs?token=${APIFY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          searchQueries: [
-            `${niche} ${city}`,
-            `${niche}`,
-          ],
-          searchType: 'place',         // busca lugares/negócios registrados
-          resultsPerQuery: IG_FIXED_QTY * 3 // busca mais para filtrar depois
-        })
-      }
-    );
-
-    // ─── DISPARA EM PARALELO ─────────────────────────────────────────────────
-    const [googleRes, igSearchRes] = await Promise.all([googlePromise, igSearchPromise]);
-
-    if (!googleRes.ok) {
-      const err = await googleRes.text();
-      throw new Error(`Apify Google error ${googleRes.status}: ${err}`);
-    }
-    if (!igSearchRes.ok) {
-      const err = await igSearchRes.text();
-      throw new Error(`Apify Instagram Search error ${igSearchRes.status}: ${err}`);
+    if (!runRes.ok) {
+      const errText = await runRes.text();
+      throw new Error(`Apify error ${runRes.status}: ${errText}`);
     }
 
-    const [googleData, igSearchData] = await Promise.all([
-      googleRes.json(),
-      igSearchRes.json()
-    ]);
-
-    return res.status(200).json({
-      google: {
-        runId: googleData.data.id,
-        datasetId: googleData.data.defaultDatasetId
-      },
-      igSearch: {
-        runId: igSearchData.data.id,
-        datasetId: igSearchData.data.defaultDatasetId
-      },
-      igQty: IG_FIXED_QTY,
-      niche,
-      city
-    });
+    const runData = await runRes.json();
+    const { id: runId, defaultDatasetId: datasetId } = runData.data;
+    return res.status(200).json({ runId, datasetId });
 
   } catch (e) {
     return res.status(500).json({ error: e.message });
