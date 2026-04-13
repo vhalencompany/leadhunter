@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     ? `Você tem disponibilidade amanhã ou quinta-feira para eu te mostrar como resolver isso com ${offer}?`
     : `Você tem disponibilidade amanhã ou quinta-feira para eu te mostrar exatamente o que está acontecendo e o que pode ser feito?`;
 
-  // Normaliza leads — inclui dados do Instagram quando disponível
+  // Normaliza leads — inclui Instagram e Reviews quando disponíveis
   const leadsRaw = places.map(p => {
     const base = {
       nome:            p.title || 'Sem nome',
@@ -23,38 +23,62 @@ export default async function handler(req, res) {
       site:            p.website || ''
     };
 
-    if (!p.igEnriched) return base;
+    // ─── Enriquecimento Instagram ─────────────────────────────────────────
+    if (p.igEnriched) {
+      const ig = p.igEnriched;
+      const postsResume = ig.recentPosts?.length
+        ? ig.recentPosts.map(post => {
+            const date = post.timestamp
+              ? new Date(post.timestamp).toLocaleDateString('pt-BR')
+              : 'data desconhecida';
+            const caption = post.caption
+              ? `"${post.caption.slice(0, 100)}${post.caption.length > 100 ? '...' : ''}"`
+              : '(sem legenda)';
+            return `  • ${date} — ${post.likes} curtidas — ${caption}`;
+          }).join('\n')
+        : '  • Nenhum post recente';
 
-    const ig = p.igEnriched;
-    const postsResume = ig.recentPosts?.length
-      ? ig.recentPosts.map(post => {
-          const date = post.timestamp
-            ? new Date(post.timestamp).toLocaleDateString('pt-BR')
-            : 'data desconhecida';
-          const caption = post.caption
-            ? `"${post.caption.slice(0, 100)}${post.caption.length > 100 ? '...' : ''}"`
-            : '(sem legenda)';
-          return `  • ${date} — ${post.likes} curtidas, ${post.comments} comentários — ${caption}`;
-        }).join('\n')
-      : '  • Nenhum post recente encontrado';
+      base.instagram = {
+        username:           ig.username,
+        seguidores:         ig.followers,
+        totalPosts:         ig.postsCount,
+        bio:                ig.bio || '(vazia)',
+        siteNaBio:          ig.site || '(nenhum)',
+        categoriaInstagram: ig.businessCategory || '(não definida)',
+        mediaLikes:         ig.avgLikes,
+        diasUltimoPost:     ig.daysSinceLastPost,
+        ultimosPosts:       postsResume
+      };
+    }
 
-    return {
-      ...base,
-      instagram: {
-        username:          ig.username,
-        seguidores:        ig.followers,
-        seguindo:          ig.following,
-        totalPosts:        ig.postsCount,
-        bio:               ig.bio || '(vazia)',
-        siteNaBio:         ig.site || '(nenhum)',
-        categoriaInstagram:ig.businessCategory || '(não definida)',
-        contaBusiness:     ig.isBusinessAccount,
-        mediaLikes:        ig.avgLikes,
-        mediaComentarios:  ig.avgComments,
-        diasUltimoPost:    ig.daysSinceLastPost,
-        ultimosPosts:      postsResume
-      }
-    };
+    // ─── Enriquecimento Reviews ───────────────────────────────────────────
+    if (p.reviewsEnriched) {
+      const rv = p.reviewsEnriched;
+      const reviewsResume = rv.reviews
+        .filter(r => r.texto && r.texto.length > 10)
+        .slice(0, 10)
+        .map(r => {
+          const nota = r.nota ? `${r.nota}★` : '?★';
+          const texto = r.texto.slice(0, 150);
+          const resposta = r.respostaOwner ? ' [owner respondeu]' : '';
+          return `  • ${nota} — "${texto}"${resposta}`;
+        })
+        .join('\n');
+
+      // Separa reviews positivas e negativas para o prompt
+      const negativas = rv.reviews.filter(r => r.nota && r.nota <= 3);
+      const positivas = rv.reviews.filter(r => r.nota && r.nota >= 4);
+
+      base.reviews = {
+        totalAnalisadas: rv.totalScraped,
+        mediaCalculada:  rv.avgRating,
+        qtdNegativas:    negativas.length,
+        qtdPositivas:    positivas.length,
+        resumo:          reviewsResume || '(sem reviews com texto)'
+      };
+    }
+
+    return base;
   });
 
   const BATCH_SIZE = 20;
@@ -66,23 +90,33 @@ export default async function handler(req, res) {
   const systemPrompt = 'Retorne APENAS JSON puro válido. Sem markdown. Sem backticks. Sem texto antes ou depois do JSON.';
 
   function buildPrompt(batch) {
-    const hasIg = batch.some(l => l.instagram);
+    const hasIg      = batch.some(l => l.instagram);
+    const hasReviews = batch.some(l => l.reviews);
+
+    const reviewsCriteria = hasReviews ? `
+CRITÉRIOS ADICIONAIS para leads com reviews reais:
+- Se reviews negativas mencionam recorrentemente o mesmo problema → pontuação "alta" obrigatória
+- Use os textos reais das reviews no diagnóstico — cite o problema exato que os clientes mencionam
+- Nunca invente problemas. Se as reviews são boas, diga isso no diagnóstico e foque em outros vetores` : '';
 
     const igCriteria = hasIg ? `
-CRITÉRIOS ADICIONAIS para leads com Instagram — pontuação "alta" se:
-- Menos de 500 seguidores
-- Último post há mais de 30 dias
-- Bio vazia ou genérica
-- Média de likes abaixo de 10
-- Sem site na bio
-Use esses dados para tornar o diagnóstico e os scripts mais específicos e cirúrgicos.` : '';
+CRITÉRIOS ADICIONAIS para leads com Instagram:
+- Menos de 500 seguidores → alta
+- Último post há mais de 30 dias → alta
+- Média de likes abaixo de 10 → alta
+- Bio vazia → alta` : '';
 
-    const igDiagInstructions = hasIg ? `
-Para leads COM dados do Instagram:
-- Use dados reais: seguidores, dias desde o último post, média de curtidas, conteúdo dos posts
-- Diagnóstico deve mencionar dado específico do Instagram (ex: "último post há 47 dias", "3 curtidas por post em média")
-- Comentário Instagram deve ser baseado em algo real do perfil — conteúdo, frequência ou engajamento
-- DM WhatsApp deve ter gancho que prova que você viu o Instagram especificamente` : '';
+    const reviewsInstructions = hasReviews ? `
+Para leads COM reviews reais:
+- Diagnóstico deve mencionar o problema exato que os clientes citam nas reviews (ex: "3 das 10 reviews mencionam demora no atendimento")
+- Se há reviews negativas recorrentes, o mecanismo deve explicar por que esse problema específico está custando novos clientes
+- Comentário Instagram deve referenciar algo que os clientes reclamam, não algo genérico
+- DM WhatsApp deve ter gancho baseado no problema real das reviews: "Vi que seus clientes mencionam [problema] — isso está afastando novos clientes antes do primeiro contato."` : '';
+
+    const igInstructions = hasIg ? `
+Para leads COM Instagram:
+- Use dados reais: seguidores, dias desde último post, média de curtidas
+- Gancho da DM: "Oi, vi o Instagram do [nome do negócio]..." em vez de "pesquisei no Maps..."` : '';
 
     return `Você é um especialista em prospecção B2B e diagnóstico de presença digital de pequenos negócios brasileiros.
 Analise cada negócio abaixo e gere diagnóstico e abordagem profissional. Nunca use emojis. Tom direto, sem elogios vazios.
@@ -93,20 +127,21 @@ CRITÉRIOS para pontuacao "alta":
 - Nota abaixo de 3.8 → SEMPRE alta
 - Dois ou mais critérios acima → SEMPRE alta
 Caso contrário: "media"
+${reviewsCriteria}
 ${igCriteria}
 
 PADRÃO DE DIAGNÓSTICO:
-Frase 1 — problema específico com dado real + contexto do mercado local de ${city}.
+Frase 1 — problema específico com dado real (use reviews reais se disponíveis) + contexto do mercado local de ${city}.
 Frase 2 — mecanismo: por que isso está custando clientes ativamente, não só que está custando.
 
 PADRÃO DE COMENTÁRIO INSTAGRAM:
-Observação cirúrgica baseada em dado real do negócio. Sem emoji. Sem elogio. Sem template óbvio. O dono lê e pensa "como essa pessoa sabe isso?". Máximo 2 frases.
-${igDiagInstructions}
+Observação cirúrgica baseada em dado real. Sem emoji. Sem elogio. Sem template óbvio. Máximo 2 frases.
+${reviewsInstructions}
+${igInstructions}
 
 PADRÃO DE DM WHATSAPP:
-- Gancho: "Oi, pesquisei [nome do negócio] em ${city} e encontrei algo que está custando clientes ativamente."
-  → Se tiver Instagram: "Oi, vi o Instagram do [nome do negócio] e encontrei algo que está custando clientes ativamente."
-- Body: mecanismo em uma frase — por que aquele problema específico elimina o negócio da consideração antes do contato.
+- Gancho baseado no dado mais forte disponível (review real > dado Instagram > dado Maps)
+- Body: mecanismo em uma frase
 - CTA: "${ctaLine}"
 
 Dados dos negócios de "${niche}" em "${city}":
