@@ -25,7 +25,9 @@
   --green: #4ADE80;
   --red: #F87171;
   --ig: #C13584;
-  --ig-dim: rgba(193,53,132,0.10);
+  --ig-dim: rgba(193,53,132,0.12);
+  --review: #60A5FA;
+  --review-dim: rgba(96,165,250,0.10);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -65,11 +67,13 @@ body {
 
 header {
   position: relative; z-index: 10;
-  padding: 32px 24px 0; max-width: 760px; margin: 0 auto;
+  padding: 32px 24px 0;
+  max-width: 760px; margin: 0 auto;
   display: flex; align-items: center; justify-content: space-between;
 }
 
 .logo { display: flex; align-items: center; gap: 12px; }
+
 .logo-icon {
   width: 36px; height: 36px;
   background: linear-gradient(135deg, var(--gold), var(--orange));
@@ -77,13 +81,16 @@ header {
   font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px; color: var(--dark);
   box-shadow: 0 0 20px rgba(200,169,110,0.25);
 }
+
 .logo-wordmark { display: flex; flex-direction: column; gap: 1px; }
+
 .logo-name {
   font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px;
   letter-spacing: 0.18em; text-transform: uppercase;
   background: linear-gradient(90deg, var(--gold), var(--gold-2));
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
+
 .logo-sub { font-size: 9px; color: var(--muted-2); letter-spacing: 0.22em; text-transform: uppercase; font-weight: 400; }
 
 .badge-live {
@@ -92,19 +99,24 @@ header {
   border-radius: 100px; font-family: 'Space Grotesk', sans-serif;
   font-size: 10px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold);
 }
+
 .badge-live .dot {
   width: 6px; height: 6px; background: var(--green); border-radius: 50%;
   animation: pulse 2s ease-in-out infinite; box-shadow: 0 0 6px var(--green);
 }
+
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
 
 .hero { padding: 72px 0 56px; position: relative; }
+
 .hero-eyebrow {
   display: inline-flex; align-items: center; gap: 10px; margin-bottom: 24px;
   font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 600;
   letter-spacing: 0.28em; text-transform: uppercase; color: var(--orange);
 }
+
 .hero-eyebrow-line { width: 28px; height: 1px; background: linear-gradient(90deg, var(--orange), transparent); }
+
 .hero-title {
   font-family: 'Space Grotesk', sans-serif;
   font-size: clamp(48px, 11vw, 88px); font-weight: 700;
@@ -115,10 +127,15 @@ header {
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 .hero-title .dim { color: var(--muted-3); }
+
 .hero-desc { font-size: 15px; color: var(--muted-3); line-height: 1.75; max-width: 480px; font-weight: 300; }
 .hero-desc strong { color: var(--light); font-weight: 500; }
 
-.divider { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, var(--dark-5), transparent); margin: 0 0 40px; }
+.divider {
+  width: 100%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--dark-5), transparent);
+  margin: 0 0 40px;
+}
 
 .panel {
   background: var(--dark-2); border: 1px solid var(--dark-4);
@@ -127,12 +144,35 @@ header {
 }
 .panel::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold), var(--orange), transparent); opacity: 0.6;
+  background: linear-gradient(90deg, transparent, var(--gold), var(--orange), transparent);
+  opacity: 0.6;
 }
 .panel-corner {
   position: absolute; bottom: 0; right: 0; width: 80px; height: 80px;
-  background: radial-gradient(circle at 100% 100%, rgba(200,169,110,0.05), transparent 70%); pointer-events: none;
+  background: radial-gradient(circle at 100% 100%, rgba(200,169,110,0.05), transparent 70%);
+  pointer-events: none;
 }
+
+/* ── SOURCES BADGE ── */
+.sources-info {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 24px; padding: 10px 14px;
+  background: var(--dark-3); border: 1px solid var(--dark-5);
+  border-radius: 10px;
+}
+.sources-info-label {
+  font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted-2);
+  margin-right: 4px;
+}
+.source-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 6px;
+  font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+.source-chip-google { background: var(--gold-dim); border: 1px solid rgba(200,169,110,0.2); color: var(--gold); }
+.source-chip-instagram { background: var(--ig-dim); border: 1px solid rgba(193,53,132,0.25); color: var(--ig); }
 
 .field-label {
   font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600;
@@ -140,6 +180,7 @@ header {
   margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
 }
 .field-label::after { content: ''; flex: 1; height: 1px; background: var(--dark-5); }
+
 .field-optional {
   font-size: 8px; font-weight: 500; letter-spacing: 0.15em; color: var(--muted);
   text-transform: uppercase; border: 1px solid var(--dark-6); border-radius: 4px;
@@ -147,10 +188,12 @@ header {
 }
 
 .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+
 .tag {
   padding: 7px 16px; background: var(--dark-3); border: 1px solid var(--dark-5);
   border-radius: 100px; font-size: 12px; font-weight: 500; color: var(--muted-2);
-  cursor: pointer; transition: all 0.2s cubic-bezier(0.22,1,0.36,1); user-select: none; font-family: 'Outfit', sans-serif;
+  cursor: pointer; transition: all 0.2s cubic-bezier(0.22,1,0.36,1);
+  user-select: none; font-family: 'Outfit', sans-serif;
 }
 .tag:hover { border-color: rgba(200,169,110,0.4); color: var(--gold-2); background: var(--gold-dim); transform: translateY(-1px); }
 .tag.active { border-color: var(--gold); color: var(--gold-2); background: var(--gold-dim); box-shadow: 0 0 12px rgba(200,169,110,0.12); }
@@ -182,7 +225,8 @@ header {
 }
 .btn-primary::before {
   content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent); opacity: 0; transition: opacity 0.3s;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+  opacity: 0; transition: opacity 0.3s;
 }
 .btn-primary:hover::before { opacity: 1; }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(200,169,110,0.3), 0 4px 12px rgba(232,112,58,0.2); }
@@ -194,9 +238,11 @@ header {
   border-radius: 14px; padding: 24px 28px; margin-bottom: 16px; animation: fadeIn 0.3s ease;
 }
 .status.show { display: block; }
+
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 .ticker-wrap { margin-bottom: 16px; }
+
 .ticker-word {
   font-family: 'Space Grotesk', monospace; font-size: 28px; font-weight: 700;
   letter-spacing: 0.18em; color: var(--gold);
@@ -206,19 +252,26 @@ header {
 .ticker-word span { display: inline-block; transition: color 0.15s; }
 .ticker-word span.done { color: var(--gold-2); }
 .ticker-word span.glitch { color: var(--orange); opacity: 0.7; }
+
 .ticker-sub {
-  font-size: 11px; color: var(--muted-2); letter-spacing: 0.15em; text-transform: uppercase;
-  font-family: 'Space Grotesk', sans-serif; font-weight: 500;
+  font-size: 11px; color: var(--muted-2); letter-spacing: 0.15em;
+  text-transform: uppercase; font-family: 'Space Grotesk', sans-serif; font-weight: 500;
 }
 
 .steps { display: flex; gap: 5px; align-items: center; }
-.sd { height: 3px; border-radius: 2px; background: var(--dark-5); transition: all 0.4s cubic-bezier(0.22,1,0.36,1); flex: 1; }
+
+.sd {
+  height: 3px; border-radius: 2px; background: var(--dark-5);
+  transition: all 0.4s cubic-bezier(0.22,1,0.36,1); flex: 1;
+}
 .sd.done { background: linear-gradient(90deg, var(--gold), var(--gold-2)); }
 .sd.active { background: linear-gradient(90deg, var(--orange), var(--gold)); animation: shimmer 1.5s ease-in-out infinite; }
+
 @keyframes shimmer { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
 .filters-bar { display: none; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
 .filters-bar.show { display: flex; }
+
 .filter-btn {
   padding: 7px 16px; background: var(--dark-3); border: 1px solid var(--dark-5);
   border-radius: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600;
@@ -246,13 +299,17 @@ header {
 .card {
   background: var(--dark-2); border: 1px solid var(--dark-4);
   border-radius: 18px; margin-bottom: 16px;
-  transition: border-color 0.3s, transform 0.45s cubic-bezier(0.22,1,0.36,1); will-change: transform;
+  transition: border-color 0.3s, transform 0.45s cubic-bezier(0.22,1,0.36,1);
+  will-change: transform;
 }
+
 @keyframes riseUp { from { opacity: 0; transform: translateY(28px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
 .card-inner { position: relative; overflow: hidden; border-radius: 18px; animation: riseUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
 .card-inner::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(200,169,110,0.3), transparent); opacity: 0; transition: opacity 0.3s;
+  background: linear-gradient(90deg, transparent, rgba(200,169,110,0.3), transparent);
+  opacity: 0; transition: opacity 0.3s;
 }
 .card:hover .card-inner::before { opacity: 1; }
 
@@ -263,6 +320,16 @@ header {
 .card-name { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; margin-bottom: 8px; color: var(--light); }
 .card-meta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .meta-chip { font-size: 11px; color: var(--muted-2); display: flex; align-items: center; gap: 4px; }
+
+/* chip de origem no card */
+.origin-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 5px;
+  font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+.origin-google { background: var(--gold-dim); border: 1px solid rgba(200,169,110,0.2); color: var(--gold); }
+.origin-instagram { background: var(--ig-dim); border: 1px solid rgba(193,53,132,0.25); color: var(--ig); }
 
 .badge { padding: 5px 12px; border-radius: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; flex-shrink: 0; white-space: nowrap; }
 .badge-hot { background: linear-gradient(135deg, rgba(232,112,58,0.18), rgba(232,68,68,0.12)); border: 1px solid rgba(232,112,58,0.35); color: var(--orange); box-shadow: 0 0 12px rgba(232,112,58,0.1); }
@@ -282,24 +349,36 @@ header {
 .ig-box-label {
   font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 700;
   letter-spacing: 0.22em; text-transform: uppercase; color: var(--ig); margin-bottom: 10px;
-  display: flex; align-items: center; gap: 6px;
 }
-.ig-stats {
-  display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 10px;
+.ig-stats { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 8px; }
+.ig-stat { display: flex; flex-direction: column; gap: 2px; }
+.ig-stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700; color: var(--light); }
+.ig-stat-label { font-size: 9px; color: var(--muted-2); letter-spacing: 0.1em; text-transform: uppercase; }
+.ig-bio { font-size: 12px; color: var(--muted-3); line-height: 1.6; margin-top: 8px; font-style: italic; border-top: 1px solid rgba(193,53,132,0.1); padding-top: 8px; }
+
+/* ── Reviews enrichment box ── */
+.rv-box {
+  background: var(--review-dim); border: 1px solid rgba(96,165,250,0.2);
+  border-left: 2px solid var(--review); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;
 }
-.ig-stat {
-  display: flex; flex-direction: column; gap: 2px;
+.rv-box-label {
+  font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--review); margin-bottom: 10px;
 }
-.ig-stat-value {
-  font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700; color: var(--light);
+.rv-stats { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; }
+.rv-stat { display: flex; flex-direction: column; gap: 2px; }
+.rv-stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700; color: var(--light); }
+.rv-stat-label { font-size: 9px; color: var(--muted-2); letter-spacing: 0.1em; text-transform: uppercase; }
+.rv-list { display: flex; flex-direction: column; gap: 8px; }
+.rv-item {
+  background: rgba(96,165,250,0.05); border: 1px solid rgba(96,165,250,0.1);
+  border-radius: 8px; padding: 10px 12px;
 }
-.ig-stat-label {
-  font-size: 9px; color: var(--muted-2); letter-spacing: 0.1em; text-transform: uppercase;
-}
-.ig-bio {
-  font-size: 12px; color: var(--muted-3); line-height: 1.6; margin-top: 8px;
-  font-style: italic; border-top: 1px solid rgba(193,53,132,0.1); padding-top: 8px;
-}
+.rv-item-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.rv-stars { font-size: 11px; color: var(--gold); }
+.rv-author { font-size: 10px; color: var(--muted-2); font-family: 'Space Grotesk', sans-serif; }
+.rv-text { font-size: 12px; color: var(--muted-3); line-height: 1.6; }
+.rv-owner-reply { font-size: 11px; color: var(--green); margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(96,165,250,0.1); }
 
 .contact-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
 .contact-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none; transition: all 0.2s; font-family: 'Outfit', sans-serif; }
@@ -307,20 +386,24 @@ header {
 .btn-wa:hover { background: rgba(37,211,102,0.15); transform: translateY(-1px); }
 .btn-site { background: var(--gold-dim); border: 1px solid rgba(200,169,110,0.2); color: var(--gold); }
 .btn-site:hover { background: rgba(200,169,110,0.18); transform: translateY(-1px); }
-.btn-ig { background: var(--ig-dim); border: 1px solid rgba(193,53,132,0.25); color: var(--ig); }
-.btn-ig:hover { background: rgba(193,53,132,0.18); transform: translateY(-1px); }
+.btn-ig { background: rgba(193,53,132,0.08); border: 1px solid rgba(193,53,132,0.25); color: #C13584; }
+.btn-ig:hover { background: rgba(193,53,132,0.15); transform: translateY(-1px); }
 .no-phone { font-size: 12px; color: var(--muted); }
 
 .scripts-toggle { width: 100%; background: transparent; border: 1px solid var(--dark-5); border-radius: 8px; padding: 10px 18px; color: var(--muted-2); font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; }
 .scripts-toggle:hover { border-color: rgba(200,169,110,0.3); color: var(--gold); background: var(--gold-dim); }
+
 .scripts-section { display: none; padding-top: 16px; }
 .scripts-section.open { display: block; }
+
 .script-block { margin-bottom: 14px; }
 .script-lbl { font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
 .script-lbl.ig { color: #C13584; }
 .script-lbl.wa { color: #25D366; }
+
 .script-txt { background: var(--dark-3); border: 1px solid var(--dark-5); border-radius: 10px; padding: 14px 16px; font-size: 13px; line-height: 1.7; color: var(--light); white-space: pre-wrap; cursor: pointer; transition: all 0.2s; font-family: 'Outfit', sans-serif; }
 .script-txt:hover { border-color: rgba(200,169,110,0.3); background: rgba(200,169,110,0.03); }
+
 .copy-tag { font-size: 10px; text-align: right; margin-top: 6px; color: var(--muted); transition: color 0.2s; font-family: 'Space Grotesk', sans-serif; letter-spacing: 0.05em; }
 .copy-tag.done { color: var(--green); }
 
@@ -343,12 +426,18 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
       <div class="logo-sub">Lead Hunter</div>
     </div>
   </div>
-  <div class="badge-live"><div class="dot"></div>B2B Intelligence</div>
+  <div class="badge-live">
+    <div class="dot"></div>
+    B2B Intelligence
+  </div>
 </header>
 
 <div class="wrap">
   <div class="hero">
-    <div class="hero-eyebrow"><span class="hero-eyebrow-line"></span>Motor de Prospecção B2B</div>
+    <div class="hero-eyebrow">
+      <span class="hero-eyebrow-line"></span>
+      Motor de Prospecção B2B
+    </div>
     <h1 class="hero-title">
       <div>PROSPECÇÃO</div>
       <div><span class="accent">B2B DE</span></div>
@@ -363,6 +452,13 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
 
   <div class="panel">
     <div class="panel-corner"></div>
+
+    <!-- fontes ativas — informativo -->
+    <div class="sources-info">
+      <span class="sources-info-label">Fontes ativas</span>
+      <span class="source-chip source-chip-google">📍 Google Maps</span>
+      <span class="source-chip source-chip-instagram">📸 Instagram</span>
+    </div>
 
     <div style="margin-bottom:24px">
       <div class="field-label">Nicho / Segmento</div>
@@ -400,7 +496,10 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
     </div>
 
     <div style="margin-bottom:0">
-      <div class="field-label">Sua Oferta <span class="field-optional">opcional</span></div>
+      <div class="field-label">
+        Sua Oferta
+        <span class="field-optional">opcional</span>
+      </div>
       <input type="text" id="offerInput" class="input" style="margin-bottom:0" placeholder="Ex: criação de sites e landing pages, gestão de tráfego...">
     </div>
 
@@ -438,6 +537,8 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
   <div class="filters-bar" id="filtersBar">
     <button class="filter-btn active" onclick="applyFilter(this,'all')">Todos</button>
     <button class="filter-btn" onclick="applyFilter(this,'hot')">🔥 Quente</button>
+    <button class="filter-btn" onclick="applyFilter(this,'google')">📍 Google</button>
+    <button class="filter-btn" onclick="applyFilter(this,'igonly')">📸 Instagram</button>
     <button class="filter-btn" onclick="applyFilter(this,'phone')">Com telefone</button>
     <button class="filter-btn" onclick="applyFilter(this,'site')">Com site</button>
     <button class="filter-btn" onclick="applyFilter(this,'instagram')">Com Instagram</button>
@@ -451,334 +552,368 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
 <footer>Vhalen Company © 2025 — Uso Restrito</footer>
 
 <script>
-/* ── LETTER GLITCH ── */
+/* ── LETTER GLITCH BACKGROUND ── */
 (function() {
   const container = document.getElementById('letter-glitch-bg');
   const canvas = document.createElement('canvas');
   container.appendChild(canvas);
   const ctx = canvas.getContext('2d');
-  const glitchColors = ['#1A1408','#C8A96E','#E8703A'];
-  const chars = Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$&*()-_+=/[]{};:<>.,0123456789');
-  const fontSize=16, charWidth=10, charHeight=20;
-  let letters=[], grid={columns:0,rows:0}, lastGlitchTime=Date.now(), animId;
-  const smooth=true, glitchSpeed=50;
+  const glitchColors = ['#1A1408', '#C8A96E', '#E8703A'];
+  const glitchSpeed = 50, smooth = true;
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$&*()-_+=/[]{};:<>.,0123456789';
+  const chars = Array.from(characters);
+  const fontSize = 16, charWidth = 10, charHeight = 20;
+  let letters = [], grid = { columns: 0, rows: 0 };
+  let lastGlitchTime = Date.now(), animId;
 
-  function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-  function hexToRgb(hex){
-    hex=hex.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i,(m,r,g,b)=>r+r+g+g+b+b);
-    const r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return r?{r:parseInt(r[1],16),g:parseInt(r[2],16),b:parseInt(r[3],16)}:null;
+  function getRandomChar() { return chars[Math.floor(Math.random() * chars.length)]; }
+  function getRandomColor() { return glitchColors[Math.floor(Math.random() * glitchColors.length)]; }
+  function hexToRgb(hex) {
+    hex = hex.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, (m,r,g,b) => r+r+g+g+b+b);
+    const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return r ? { r: parseInt(r[1],16), g: parseInt(r[2],16), b: parseInt(r[3],16) } : null;
   }
-  function lerp(s,e,f){ return `rgb(${Math.round(s.r+(e.r-s.r)*f)},${Math.round(s.g+(e.g-s.g)*f)},${Math.round(s.b+(e.b-s.b)*f)})`; }
-  function init(c,r){ grid={columns:c,rows:r}; letters=Array.from({length:c*r},()=>({char:rnd(chars),color:rnd(glitchColors),targetColor:rnd(glitchColors),colorProgress:1})); }
-  function draw(){
-    ctx.clearRect(0,0,window.innerWidth,window.innerHeight);
-    ctx.font=fontSize+'px monospace'; ctx.textBaseline='top';
-    letters.forEach((l,i)=>{ ctx.fillStyle=l.color; ctx.fillText(l.char,(i%grid.columns)*charWidth,Math.floor(i/grid.columns)*charHeight); });
+  function interpolateColor(s, e, f) { return `rgb(${Math.round(s.r+(e.r-s.r)*f)},${Math.round(s.g+(e.g-s.g)*f)},${Math.round(s.b+(e.b-s.b)*f)})`; }
+  function initLetters(c, r) {
+    grid = { columns: c, rows: r };
+    letters = Array.from({ length: c * r }, () => ({ char: getRandomChar(), color: getRandomColor(), targetColor: getRandomColor(), colorProgress: 1 }));
   }
-  function update(){
-    const n=Math.max(1,Math.floor(letters.length*0.05));
-    for(let i=0;i<n;i++){
-      const idx=Math.floor(Math.random()*letters.length);
-      if(!letters[idx]) continue;
-      letters[idx].char=rnd(chars); letters[idx].targetColor=rnd(glitchColors);
-      if(!smooth){letters[idx].color=letters[idx].targetColor;letters[idx].colorProgress=1;}
-      else letters[idx].colorProgress=0;
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1, W = window.innerWidth, H = window.innerHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    initLetters(Math.ceil(W/charWidth), Math.ceil(H/charHeight));
+    drawLetters();
+  }
+  function drawLetters() {
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    ctx.font = fontSize + 'px monospace'; ctx.textBaseline = 'top';
+    letters.forEach((l, i) => { ctx.fillStyle = l.color; ctx.fillText(l.char, (i % grid.columns) * charWidth, Math.floor(i / grid.columns) * charHeight); });
+  }
+  function updateLetters() {
+    const n = Math.max(1, Math.floor(letters.length * 0.05));
+    for (let i = 0; i < n; i++) {
+      const idx = Math.floor(Math.random() * letters.length);
+      if (!letters[idx]) continue;
+      letters[idx].char = getRandomChar(); letters[idx].targetColor = getRandomColor();
+      if (!smooth) { letters[idx].color = letters[idx].targetColor; letters[idx].colorProgress = 1; }
+      else letters[idx].colorProgress = 0;
     }
   }
-  function transitions(){
-    let need=false;
-    letters.forEach(l=>{
-      if(l.colorProgress<1){
-        l.colorProgress=Math.min(1,l.colorProgress+0.05);
-        const s=hexToRgb(l.color),e=hexToRgb(l.targetColor);
-        if(s&&e){l.color=lerp(s,e,l.colorProgress);need=true;}
+  function handleSmoothTransitions() {
+    let need = false;
+    letters.forEach(l => {
+      if (l.colorProgress < 1) {
+        l.colorProgress = Math.min(1, l.colorProgress + 0.05);
+        const s = hexToRgb(l.color), e = hexToRgb(l.targetColor);
+        if (s && e) { l.color = interpolateColor(s, e, l.colorProgress); need = true; }
       }
     });
-    if(need) draw();
+    if (need) drawLetters();
   }
-  function resize(){
-    const dpr=window.devicePixelRatio||1,W=window.innerWidth,H=window.innerHeight;
-    canvas.width=W*dpr; canvas.height=H*dpr;
-    canvas.style.width=W+'px'; canvas.style.height=H+'px';
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    init(Math.ceil(W/charWidth),Math.ceil(H/charHeight)); draw();
-  }
-  function animate(){
-    const now=Date.now();
-    if(now-lastGlitchTime>=glitchSpeed){update();draw();lastGlitchTime=now;}
-    if(smooth) transitions();
-    animId=requestAnimationFrame(animate);
+  function animate() {
+    const now = Date.now();
+    if (now - lastGlitchTime >= glitchSpeed) { updateLetters(); drawLetters(); lastGlitchTime = now; }
+    if (smooth) handleSmoothTransitions();
+    animId = requestAnimationFrame(animate);
   }
   let rt;
-  window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{cancelAnimationFrame(animId);resize();animate();},100);});
-  resize(); animate();
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { cancelAnimationFrame(animId); resizeCanvas(); animate(); }, 100); });
+  resizeCanvas(); animate();
 })();
 
 /* ── FILTROS ── */
-let allLeads=[], activeFilter='all';
+let allLeads = [];
+let activeFilter = 'all';
 
-function applyFilter(btn,filter){
-  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); activeFilter=filter; renderLeads();
+function applyFilter(btn, filter) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeFilter = filter;
+  renderLeads();
 }
 
-function getFilteredLeads(){
-  switch(activeFilter){
-    case 'hot':       return allLeads.filter(l=>l.pontuacao==='alta');
-    case 'phone':     return allLeads.filter(l=>l.telefone);
-    case 'site':      return allLeads.filter(l=>l.site);
-    case 'instagram': return allLeads.filter(l=>l.instagram);
-    case 'nosite':    return allLeads.filter(l=>!l.site);
-    case 'nophone':   return allLeads.filter(l=>!l.telefone);
+function getFilteredLeads() {
+  switch (activeFilter) {
+    case 'hot':       return allLeads.filter(l => l.pontuacao === 'alta');
+    case 'google':    return allLeads.filter(l => l.source === 'google');
+    case 'igonly':    return allLeads.filter(l => l.source === 'instagram');
+    case 'phone':     return allLeads.filter(l => l.telefone);
+    case 'site':      return allLeads.filter(l => l.site);
+    case 'instagram': return allLeads.filter(l => l.instagram);
+    case 'nosite':    return allLeads.filter(l => !l.site);
+    case 'nophone':   return allLeads.filter(l => !l.telefone);
     default:          return allLeads;
   }
 }
 
-function renderLeads(){
-  const filtered=getFilteredLeads();
-  const list=document.getElementById('list');
-  list.innerHTML='';
-  filtered.forEach((lead,idx)=>{
-    const div=document.createElement('div');
-    div.innerHTML=buildCard(lead,idx);
-    const card=div.firstChild;
+function renderLeads() {
+  const filtered = getFilteredLeads();
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  filtered.forEach((lead, idx) => {
+    const div = document.createElement('div');
+    div.innerHTML = buildCard(lead, idx);
+    const card = div.firstChild;
     list.appendChild(card);
     initTilt(card);
   });
-  document.getElementById('resultsCount').textContent=
-    filtered.length===allLeads.length
-      ?'Toque no script para copiar'
-      :`${filtered.length} de ${allLeads.length} oportunidades`;
+  document.getElementById('resultsCount').textContent =
+    filtered.length === allLeads.length
+      ? 'Toque no script para copiar'
+      : `${filtered.length} de ${allLeads.length} oportunidades`;
 }
 
-function initTilt(card){
-  card.addEventListener('mousemove',e=>{
-    const rect=card.getBoundingClientRect();
-    const dx=(e.clientX-rect.left-rect.width/2)/(rect.width/2);
-    const dy=(e.clientY-rect.top-rect.height/2)/(rect.height/2);
-    card.style.transition='border-color 0.3s, transform 0.12s ease-out';
-    card.style.transform=`perspective(900px) rotateY(${dx*5}deg) rotateX(${-dy*4}deg) scale(1.01)`;
-    card.style.borderColor='rgba(200,169,110,0.35)';
+function initTilt(card) {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const dx = (e.clientX - rect.left - rect.width/2) / (rect.width/2);
+    const dy = (e.clientY - rect.top - rect.height/2) / (rect.height/2);
+    card.style.transition = 'border-color 0.3s, transform 0.12s ease-out';
+    card.style.transform = `perspective(900px) rotateY(${dx*5}deg) rotateX(${-dy*4}deg) scale(1.01)`;
+    card.style.borderColor = 'rgba(200,169,110,0.35)';
   });
-  card.addEventListener('mouseleave',()=>{
-    card.style.transition='border-color 0.3s, transform 0.5s cubic-bezier(0.22,1,0.36,1)';
-    card.style.transform='perspective(900px) rotateY(0deg) rotateX(0deg) scale(1)';
-    card.style.borderColor='';
+  card.addEventListener('mouseleave', () => {
+    card.style.transition = 'border-color 0.3s, transform 0.5s cubic-bezier(0.22,1,0.36,1)';
+    card.style.transform = 'perspective(900px) rotateY(0deg) rotateX(0deg) scale(1)';
+    card.style.borderColor = '';
   });
 }
 
-const API_URL=window.location.origin+'/api/search';
+/* ── UTILS ── */
+const API_URL = window.location.origin + '/api/search';
 
-function pickTag(el,val){
-  document.querySelectorAll('.tag').forEach(t=>t.classList.remove('active'));
+function pickTag(el, val) {
+  document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('nicheInput').value=val;
+  document.getElementById('nicheInput').value = val;
 }
 
 /* ── TICKER ── */
-const TICKER_CHARS='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
-const TICKER_MESSAGES=[
-  {word:'MAPEANDO',    sub:'Buscando oportunidades no Google Maps...'},
-  {word:'COLETANDO',   sub:'Extraindo dados de presença digital...'},
-  {word:'ENRIQUECENDO',sub:'Analisando perfis do Instagram...'},
-  {word:'ANALISANDO',  sub:'Identificando falhas estratégicas com IA...'},
+const TICKER_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
+const TICKER_MESSAGES = [
+  { word: 'MAPEANDO',     sub: 'Buscando oportunidades no Google Maps...' },
+  { word: 'COLETANDO',    sub: 'Extraindo dados de presença digital...' },
+  { word: 'ENRIQUECENDO', sub: 'Analisando Instagram e reviews dos clientes...' },
+  { word: 'ANALISANDO',   sub: 'Identificando falhas estratégicas com IA...' },
 ];
-let tickerAnimId=null, tickerMsgInterval=null, tickerMsgIndex=0;
+let tickerAnimId = null, tickerMsgInterval = null, tickerMsgIndex = 0;
 
-function runTicker(word,onComplete){
-  const el=document.getElementById('tickerWord');
-  if(!el) return;
-  el.innerHTML=word.split('').map(()=>`<span>${TICKER_CHARS[Math.floor(Math.random()*TICKER_CHARS.length)]}</span>`).join('');
-  const spans=el.querySelectorAll('span');
-  let cycle=0,letter=0,done=false;
+function getTickerChar() { return TICKER_CHARS[Math.floor(Math.random() * TICKER_CHARS.length)]; }
+
+function runTicker(word, onComplete) {
+  const el = document.getElementById('tickerWord');
+  if (!el) return;
+  el.innerHTML = word.split('').map(() => `<span>${getTickerChar()}</span>`).join('');
+  const spans = el.querySelectorAll('span');
+  const cycleCount = 6;
+  let cycleCurrent = 0, letterCurrent = 0, done = false;
   cancelAnimationFrame(tickerAnimId);
-  function loop(){
-    if(done){if(onComplete)onComplete();return;}
-    spans.forEach((s,i)=>{if(i>=letter){s.textContent=TICKER_CHARS[Math.floor(Math.random()*TICKER_CHARS.length)];s.className='glitch';}});
-    if(cycle<6) cycle++;
-    else if(letter<spans.length){spans[letter].textContent=word[letter];spans[letter].className='done';cycle=0;letter++;}
-    else done=true;
-    if(!done) tickerAnimId=requestAnimationFrame(loop);
-    else if(onComplete) setTimeout(onComplete,600);
+
+  function loop() {
+    if (done) { if (onComplete) onComplete(); return; }
+    spans.forEach((span, i) => { if (i >= letterCurrent) { span.textContent = getTickerChar(); span.className = 'glitch'; } });
+    if (cycleCurrent < cycleCount) {
+      cycleCurrent++;
+    } else if (letterCurrent < spans.length) {
+      spans[letterCurrent].textContent = word[letterCurrent];
+      spans[letterCurrent].className = 'done';
+      cycleCurrent = 0; letterCurrent++;
+    } else { done = true; }
+    if (!done) tickerAnimId = requestAnimationFrame(loop);
+    else if (onComplete) setTimeout(onComplete, 600);
   }
   loop();
 }
 
-function startTickerLoop(stepIndex){
+function startTickerLoop(stepIndex) {
   clearInterval(tickerMsgInterval);
-  tickerMsgIndex=stepIndex||0;
-  function showNext(){
-    const msg=TICKER_MESSAGES[tickerMsgIndex%TICKER_MESSAGES.length];
-    document.getElementById('tickerSub').textContent=msg.sub;
-    runTicker(msg.word,()=>tickerMsgIndex++);
+  tickerMsgIndex = stepIndex || 0;
+  function showNext() {
+    const msg = TICKER_MESSAGES[tickerMsgIndex % TICKER_MESSAGES.length];
+    document.getElementById('tickerSub').textContent = msg.sub;
+    runTicker(msg.word, () => { tickerMsgIndex++; });
   }
   showNext();
-  tickerMsgInterval=setInterval(showNext,4000);
+  tickerMsgInterval = setInterval(showNext, 4000);
 }
 
-function stopTicker(){cancelAnimationFrame(tickerAnimId);clearInterval(tickerMsgInterval);}
+function stopTicker() { cancelAnimationFrame(tickerAnimId); clearInterval(tickerMsgInterval); }
 
-function setStatus(step){
+function setStatus(step) {
   document.getElementById('statusBox').classList.add('show');
-  if(step!==undefined){
-    ['sd1','sd2','sd3','sd4'].forEach((id,i)=>{
-      const d=document.getElementById(id);
-      d.className='sd'+(i<step?' done':i===step?' active':'');
+  if (step !== undefined) {
+    ['sd1','sd2','sd3','sd4'].forEach((id, i) => {
+      const d = document.getElementById(id);
+      d.className = 'sd' + (i < step ? ' done' : i === step ? ' active' : '');
     });
-    const msg=TICKER_MESSAGES[Math.min(step,TICKER_MESSAGES.length-1)];
-    if(msg) document.getElementById('tickerSub').textContent=msg.sub;
+    const msg = TICKER_MESSAGES[Math.min(step, TICKER_MESSAGES.length - 1)];
+    if (msg) document.getElementById('tickerSub').textContent = msg.sub;
   }
 }
 
-function clearStatus(){stopTicker();document.getElementById('statusBox').classList.remove('show');}
-function showErr(msg){const b=document.getElementById('errBox');b.textContent=msg;b.classList.add('show');}
-function clearErr(){document.getElementById('errBox').classList.remove('show');}
+function clearStatus() { stopTicker(); document.getElementById('statusBox').classList.remove('show'); }
+function showErr(msg) { const b = document.getElementById('errBox'); b.textContent = msg; b.classList.add('show'); }
+function clearErr() { document.getElementById('errBox').classList.remove('show'); }
 
 /* ── HUNT ── */
-async function hunt(){
-  const niche=document.getElementById('nicheInput').value.trim();
-  const city =document.getElementById('cityInput').value.trim();
-  const qty  =document.getElementById('qtyInput').value;
-  const offer=document.getElementById('offerInput').value.trim();
-  if(!niche||!city){showErr('Preencha o segmento e a cidade.');return;}
+async function hunt() {
+  const niche = document.getElementById('nicheInput').value.trim();
+  const city  = document.getElementById('cityInput').value.trim();
+  const qty   = document.getElementById('qtyInput').value;
+  const offer = document.getElementById('offerInput').value.trim();
+  if (!niche || !city) { showErr('Preencha o segmento e a cidade.'); return; }
 
   clearErr();
-  document.getElementById('list').innerHTML='';
+  document.getElementById('list').innerHTML = '';
   document.getElementById('resultsMeta').classList.remove('show');
   document.getElementById('filtersBar').classList.remove('show');
   document.getElementById('emptyBox').classList.remove('show');
-  const btn=document.getElementById('searchBtn');
-  btn.disabled=true;
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true;
 
   try {
-    setStatus(0); startTickerLoop(0);
+    setStatus(0);
+    startTickerLoop(0);
 
-    const searchRes=await fetch(API_URL,{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({niche,city,qty})
+    // ── SEARCH — dispara os dois em paralelo ──
+    const searchRes = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ niche, city, qty })
     });
-    if(!searchRes.ok){
-      const e=await searchRes.json().catch(()=>({error:'Erro desconhecido'}));
-      throw new Error(e.error||'Erro na busca.');
+    if (!searchRes.ok) {
+      const errData = await searchRes.json().catch(() => ({ error: 'Erro desconhecido' }));
+      throw new Error(errData.error || 'Erro na busca.');
     }
-    const {runId,datasetId}=await searchRes.json();
+    const { runId, datasetId } = await searchRes.json();
 
     setStatus(1);
 
-    // Polling com suporte a fase 2 (enriquecimento Instagram)
-    let places=null;
-    let pollPayload={runId,datasetId,qty};
+    // ── POLLING — Fase 1: Google Maps → Fase 2: Instagram + Reviews ──
+    let places = null;
+    let pollState = { runId, datasetId, qty };
 
-    for(let i=0;i<80;i++){
-      await new Promise(r=>setTimeout(r,4000));
-      const stRes=await fetch(window.location.origin+'/api/status',{
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(pollPayload)
+    for (let i = 0; i < 80; i++) {
+      await new Promise(r => setTimeout(r, 4000));
+      const stRes = await fetch(window.location.origin + '/api/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pollState)
       });
-      const stData=await stRes.json();
+      const stData = await stRes.json();
 
-      if(stData.status==='done'){places=stData.places;break;}
-      if(stData.status==='failed') throw new Error('Busca falhou no Apify.');
+      if (stData.status === 'done')   { places = stData.places; break; }
+      if (stData.status === 'failed') throw new Error('Busca falhou: ' + stData.reason);
 
-      // Fase 2 — status.js disparou os actors do Instagram
-      if(stData.phase===2){
-        setStatus(2); // barra de progresso avança
-        pollPayload={
+      // Fase 2 — status.js disparou enrichment actors
+      if (stData.phase === 2) {
+        setStatus(2);
+        pollState = {
           runId, datasetId, qty,
           igEnrichRunId:     stData.igEnrichRunId,
           igEnrichDatasetId: stData.igEnrichDatasetId,
           igPostRunId:       stData.igPostRunId,
           igPostDatasetId:   stData.igPostDatasetId,
+          reviewsRunId:      stData.reviewsRunId,
+          reviewsDatasetId:  stData.reviewsDatasetId,
           googleDatasetId:   stData.googleDatasetId || datasetId,
           googleQty:         stData.googleQty       || qty
         };
       }
     }
 
-    if(!places||places.length===0){
+    if (!places || places.length === 0) {
       document.getElementById('emptyBox').classList.add('show');
-      clearStatus(); btn.disabled=false; return;
+      clearStatus(); btn.disabled = false; return;
     }
 
     setStatus(3);
-    const analysisRes=await fetch(window.location.origin+'/api/analyze',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({places,niche,city,offer})
+    const analysisRes = await fetch(window.location.origin + '/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ places, niche, city, offer })
     });
-    const analysis=await analysisRes.json();
+    const analysis = await analysisRes.json();
 
-    // Monta leads finais
-    const leadsRaw=places.map(p=>{
-      const socialLinks=p.socialLinks||[];
-      let instagram=socialLinks.find(s=>s&&s.toLowerCase().includes('instagram.com'))||'';
-      let site=p.website||'';
-      if(!instagram&&site.toLowerCase().includes('instagram.com')){instagram=site;site='';}
-      // Se tiver enriquecimento, usa URL do ig enriquecido
-      if(p.igEnriched?.url) instagram=p.igEnriched.url;
+    // ── MONTA LEADS FINAIS ──
+    const leadsRaw = places.map(p => {
+      const socialLinks = p.socialLinks || [];
+      let instagram = socialLinks.find(s => s && s.toLowerCase().includes('instagram.com')) || '';
+      let site = p.website || '';
+      if (!instagram && site.toLowerCase().includes('instagram.com')) { instagram = site; site = ''; }
+      if (p.igEnriched?.url) instagram = p.igEnriched.url;
       return {
-        nome:            p.title||'Sem nome',
-        endereco:        p.address||city,
-        telefone:        p.phone||'',
-        avaliacao:       p.totalScore?p.totalScore.toFixed(1):null,
-        totalAvaliacoes: p.reviewsCount||0,
+        nome:            p.title || 'Sem nome',
+        endereco:        p.address || city,
+        telefone:        p.phone  || '',
+        avaliacao:       p.totalScore ? p.totalScore.toFixed(1) : null,
+        totalAvaliacoes: p.reviewsCount || 0,
         site, instagram,
-        igEnriched:      p.igEnriched||null
+        igEnriched:      p.igEnriched      || null,
+        reviewsEnriched: p.reviewsEnriched || null
       };
     });
 
-    const analiseMap={};
-    (analysis.analises||[]).forEach(a=>{if(a.nome) analiseMap[a.nome.trim().toLowerCase()]=a;});
-    const final=leadsRaw.map((l,idx)=>{
-      const key=(l.nome||'').trim().toLowerCase();
-      const match=analiseMap[key]||analysis.analises?.[idx]||{};
-      return {...l,...match};
+    const analiseMap = {};
+    (analysis.analises || []).forEach(a => {
+      if (a.nome) analiseMap[a.nome.trim().toLowerCase()] = a;
+    });
+    const final = leadsRaw.map((l, idx) => {
+      const key   = (l.nome || '').trim().toLowerCase();
+      const match = analiseMap[key] || analysis.analises?.[idx] || {};
+      return { ...l, ...match };
     });
 
     clearStatus();
-    allLeads=final; activeFilter='all';
-    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    allLeads = final;
+    activeFilter = 'all';
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     document.querySelector('.filter-btn').classList.add('active');
 
-    const igCount=final.filter(l=>l.igEnriched).length;
-    document.getElementById('resultsLabel').textContent=`${final.length} oportunidades — ${niche} em ${city}`;
-    document.getElementById('resultsCount').textContent=igCount>0
-      ?`${igCount} com análise Instagram · Toque no script para copiar`
-      :'Toque no script para copiar';
+    const igCount = final.filter(l => l.igEnriched).length;
+    const rvCount = final.filter(l => l.reviewsEnriched).length;
+    document.getElementById('resultsLabel').textContent = `${final.length} oportunidades — ${niche} em ${city}`;
+    const parts = [];
+    if (igCount > 0) parts.push(`📸 ${igCount} com Instagram`);
+    if (rvCount > 0) parts.push(`⭐ ${rvCount} com reviews`);
+    document.getElementById('resultsCount').textContent = parts.length ? parts.join(' · ') : 'Toque no script para copiar';
 
     document.getElementById('resultsMeta').classList.add('show');
     document.getElementById('filtersBar').classList.add('show');
     renderLeads();
 
-  } catch(e){
-    clearStatus(); showErr('Erro: '+e.message);
+  } catch (e) {
+    clearStatus();
+    showErr('Erro: ' + e.message);
   }
-  btn.disabled=false;
+  btn.disabled = false;
 }
 
 /* ── BUILD CARD ── */
-function buildCard(l,i){
-  const isHot=l.pontuacao==='alta';
-  const delay=i*0.08;
-  const phone=(l.telefone||'').replace(/\D/g,'');
-  const stars=l.avaliacao?`⭐ ${l.avaliacao} (${l.totalAvaliacoes})`:'⭐ Sem avaliação';
+function buildCard(l, i) {
+  const isHot = l.pontuacao === 'alta';
+  const delay = i * 0.08;
+  const phone = (l.telefone || '').replace(/\D/g, '');
+  const stars = l.avaliacao ? `⭐ ${l.avaliacao} (${l.totalAvaliacoes})` : '⭐ Sem avaliação';
 
-  const phoneHtml=phone
-    ?`<a href="https://wa.me/55${phone}" target="_blank" class="contact-btn btn-wa">📱 ${l.telefone}</a>`
-    :`<span class="no-phone">📵 Sem telefone</span>`;
-  const siteHtml=l.site?`<a href="${l.site}" target="_blank" class="contact-btn btn-site">🌐 Site</a>`:'';
-  const igHtml  =l.instagram?`<a href="${l.instagram}" target="_blank" class="contact-btn btn-ig">📸 Instagram</a>`:'';
+  const phoneHtml = phone
+    ? `<a href="https://wa.me/55${phone}" target="_blank" class="contact-btn btn-wa">📱 ${l.telefone}</a>`
+    : `<span class="no-phone">📵 Sem telefone</span>`;
+  const siteHtml = l.site      ? `<a href="${l.site}"      target="_blank" class="contact-btn btn-site">🌐 Site</a>` : '';
+  const igHtml   = l.instagram ? `<a href="${l.instagram}" target="_blank" class="contact-btn btn-ig">📸 Instagram</a>` : '';
 
-  // Bloco de enriquecimento Instagram
-  let igBoxHtml='';
-  if(l.igEnriched){
-    const ig=l.igEnriched;
-    const lastPost=ig.daysSinceLastPost!=null
-      ?(ig.daysSinceLastPost===0?'hoje':`há ${ig.daysSinceLastPost} dias`)
-      :'desconhecido';
-    const bioHtml=ig.bio&&ig.bio!=='(vazia)'
-      ?`<div class="ig-bio">"${ig.bio}"</div>`:'';
-    igBoxHtml=`
+  // ── Bloco Instagram ──
+  let igBoxHtml = '';
+  if (l.igEnriched) {
+    const ig = l.igEnriched;
+    const lastPost = ig.daysSinceLastPost != null
+      ? (ig.daysSinceLastPost === 0 ? 'hoje' : `há ${ig.daysSinceLastPost} dias`)
+      : 'desconhecido';
+    const bioHtml = ig.bio && ig.bio !== '(vazia)'
+      ? `<div class="ig-bio">"${ig.bio}"</div>` : '';
+    igBoxHtml = `
     <div class="ig-box">
       <div class="ig-box-label">📸 Inteligência Instagram</div>
       <div class="ig-stats">
@@ -787,8 +922,38 @@ function buildCard(l,i){
         <div class="ig-stat"><div class="ig-stat-value">${ig.avgLikes||0}</div><div class="ig-stat-label">Média likes</div></div>
         <div class="ig-stat"><div class="ig-stat-value">${lastPost}</div><div class="ig-stat-label">Último post</div></div>
       </div>
-      ${ig.businessCategory&&ig.businessCategory!=='(não definida)'?`<div style="font-size:11px;color:var(--muted-2);margin-bottom:4px">Categoria: ${ig.businessCategory}</div>`:''}
+      ${ig.businessCategory && ig.businessCategory !== '(não definida)' ? `<div style="font-size:11px;color:var(--muted-2);margin-bottom:4px">Categoria: ${ig.businessCategory}</div>` : ''}
       ${bioHtml}
+    </div>`;
+  }
+
+  // ── Bloco Reviews ──
+  let rvBoxHtml = '';
+  if (l.reviewsEnriched) {
+    const rv = l.reviewsEnriched;
+    const starsStr = n => n ? '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n)) : '—';
+    const rvItems = (rv.reviews || [])
+      .filter(r => r.texto && r.texto.length > 5)
+      .slice(0, 5)
+      .map(r => `
+        <div class="rv-item">
+          <div class="rv-item-header">
+            <span class="rv-stars">${starsStr(r.nota)} ${r.nota ? r.nota + '★' : ''}</span>
+            <span class="rv-author">${r.autor || 'Anônimo'}</span>
+          </div>
+          <div class="rv-text">"${r.texto.slice(0, 160)}${r.texto.length > 160 ? '...' : ''}"</div>
+          ${r.respostaOwner ? `<div class="rv-owner-reply">↩ Dono respondeu</div>` : ''}
+        </div>`).join('');
+
+    rvBoxHtml = `
+    <div class="rv-box">
+      <div class="rv-box-label">⭐ Voz dos Clientes — ${rv.totalScraped} reviews analisadas</div>
+      <div class="rv-stats">
+        <div class="rv-stat"><div class="rv-stat-value">${rv.avgRating || '—'}</div><div class="rv-stat-label">Média calculada</div></div>
+        <div class="rv-stat"><div class="rv-stat-value" style="color:var(--red)">${rv.qtdNegativas||0}</div><div class="rv-stat-label">Reviews negativas</div></div>
+        <div class="rv-stat"><div class="rv-stat-value" style="color:var(--green)">${rv.qtdPositivas||0}</div><div class="rv-stat-label">Reviews positivas</div></div>
+      </div>
+      ${rvItems ? `<div class="rv-list">${rvItems}</div>` : ''}
     </div>`;
   }
 
@@ -802,14 +967,15 @@ function buildCard(l,i){
             <span class="meta-chip">${stars}</span>
           </div>
         </div>
-        <div class="badge ${isHot?'badge-hot':'badge-warm'}">${isHot?'🔥 Quente':'✦ Médio'}</div>
+        <div class="badge ${isHot ? 'badge-hot' : 'badge-warm'}">${isHot ? '🔥 Quente' : '✦ Médio'}</div>
       </div>
       <div class="card-body">
         <div class="diag-box">
           <div class="diag-label">Diagnóstico Estratégico</div>
-          <div class="diag-text">${l.problemas||'Analisando...'}</div>
+          <div class="diag-text">${l.problemas || 'Analisando...'}</div>
         </div>
         ${igBoxHtml}
+        ${rvBoxHtml}
         <div class="contact-row">${phoneHtml}${siteHtml}${igHtml}</div>
         <button class="scripts-toggle" onclick="tog(this,'sc${i}')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -818,12 +984,12 @@ function buildCard(l,i){
         <div class="scripts-section" id="sc${i}">
           <div class="script-block" style="margin-top:16px">
             <div class="script-lbl ig">📸 Comentário — Instagram</div>
-            <div class="script-txt" onclick="cp(this,'ct${i}a')">${l.comentario||'—'}</div>
+            <div class="script-txt" onclick="cp(this,'ct${i}a')">${l.comentario || '—'}</div>
             <div class="copy-tag" id="ct${i}a">toque para copiar</div>
           </div>
           <div class="script-block">
             <div class="script-lbl wa">💬 DM — WhatsApp</div>
-            <div class="script-txt" onclick="cp(this,'ct${i}b')">${l.dm||'—'}</div>
+            <div class="script-txt" onclick="cp(this,'ct${i}b')">${l.dm || '—'}</div>
             <div class="copy-tag" id="ct${i}b">toque para copiar</div>
           </div>
         </div>
@@ -832,20 +998,21 @@ function buildCard(l,i){
   </div>`;
 }
 
-function tog(btn,id){
-  const s=document.getElementById(id);
+function tog(btn, id) {
+  const s = document.getElementById(id);
   s.classList.toggle('open');
-  btn.innerHTML=s.classList.contains('open')
-    ?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg> OCULTAR'
-    :'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> VER ABORDAGENS';
+  btn.innerHTML = s.classList.contains('open')
+    ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg> OCULTAR'
+    : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> VER ABORDAGENS';
 }
 
-function cp(el,hintId){
-  navigator.clipboard.writeText(el.textContent.trim()).then(()=>{
-    const h=document.getElementById(hintId);
-    h.textContent='✓ copiado'; h.classList.add('done');
-    setTimeout(()=>{h.textContent='toque para copiar';h.classList.remove('done');},2200);
-  }).catch(()=>{});
+function cp(el, hintId) {
+  navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+    const h = document.getElementById(hintId);
+    h.textContent = '✓ copiado';
+    h.classList.add('done');
+    setTimeout(() => { h.textContent = 'toque para copiar'; h.classList.remove('done'); }, 2200);
+  }).catch(() => {});
 }
 </script>
 </body>
