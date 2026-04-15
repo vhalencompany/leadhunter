@@ -153,7 +153,6 @@ header {
   pointer-events: none;
 }
 
-/* ── SOURCES BADGE ── */
 .sources-info {
   display: flex; align-items: center; gap: 8px;
   margin-bottom: 24px; padding: 10px 14px;
@@ -212,6 +211,40 @@ header {
 
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .row-2 .input { margin-bottom: 0; }
+
+/* ── VARIANTES DE BUSCA ── */
+.variant-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: -8px; margin-bottom: 16px;
+}
+.variant-label {
+  font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted-2);
+  white-space: nowrap; flex-shrink: 0;
+}
+.variant-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+.variant-chip {
+  padding: 4px 12px; background: var(--dark-3); border: 1px solid var(--dark-5);
+  border-radius: 100px; font-size: 11px; color: var(--muted-2); cursor: pointer;
+  transition: all 0.2s; font-family: 'Outfit', sans-serif; white-space: nowrap;
+}
+.variant-chip:hover { border-color: rgba(200,169,110,0.3); color: var(--gold); }
+.variant-chip.active { border-color: var(--gold); color: var(--gold-2); background: var(--gold-dim); }
+
+/* ── DEDUP BADGE ── */
+.dedup-badge {
+  display: none; align-items: center; gap: 6px;
+  padding: 5px 12px; background: rgba(74,222,128,0.06); border: 1px solid rgba(74,222,128,0.2);
+  border-radius: 8px; font-family: 'Space Grotesk', sans-serif; font-size: 10px;
+  font-weight: 600; letter-spacing: 0.1em; color: var(--green); margin-bottom: 12px;
+}
+.dedup-badge.show { display: flex; }
+.dedup-reset {
+  margin-left: auto; background: transparent; border: none; color: var(--muted-2);
+  font-size: 10px; cursor: pointer; padding: 2px 6px; border-radius: 4px;
+  font-family: 'Space Grotesk', sans-serif; transition: color 0.2s;
+}
+.dedup-reset:hover { color: var(--red); }
 
 .btn-primary {
   width: 100%;
@@ -321,16 +354,6 @@ header {
 .card-meta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .meta-chip { font-size: 11px; color: var(--muted-2); display: flex; align-items: center; gap: 4px; }
 
-/* chip de origem no card */
-.origin-chip {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 8px; border-radius: 5px;
-  font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 700;
-  letter-spacing: 0.12em; text-transform: uppercase;
-}
-.origin-google { background: var(--gold-dim); border: 1px solid rgba(200,169,110,0.2); color: var(--gold); }
-.origin-instagram { background: var(--ig-dim); border: 1px solid rgba(193,53,132,0.25); color: var(--ig); }
-
 .badge { padding: 5px 12px; border-radius: 100px; font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; flex-shrink: 0; white-space: nowrap; }
 .badge-hot { background: linear-gradient(135deg, rgba(232,112,58,0.18), rgba(232,68,68,0.12)); border: 1px solid rgba(232,112,58,0.35); color: var(--orange); box-shadow: 0 0 12px rgba(232,112,58,0.1); }
 .badge-warm { background: rgba(200,169,110,0.08); border: 1px solid rgba(200,169,110,0.2); color: var(--gold); }
@@ -341,7 +364,6 @@ header {
 .diag-label { font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--orange); margin-bottom: 8px; }
 .diag-text { font-size: 13px; color: var(--muted-3); line-height: 1.7; }
 
-/* ── Instagram enrichment box ── */
 .ig-box {
   background: var(--ig-dim); border: 1px solid rgba(193,53,132,0.2);
   border-left: 2px solid var(--ig); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;
@@ -355,30 +377,6 @@ header {
 .ig-stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700; color: var(--light); }
 .ig-stat-label { font-size: 9px; color: var(--muted-2); letter-spacing: 0.1em; text-transform: uppercase; }
 .ig-bio { font-size: 12px; color: var(--muted-3); line-height: 1.6; margin-top: 8px; font-style: italic; border-top: 1px solid rgba(193,53,132,0.1); padding-top: 8px; }
-
-/* ── Reviews enrichment box ── */
-.rv-box {
-  background: var(--review-dim); border: 1px solid rgba(96,165,250,0.2);
-  border-left: 2px solid var(--review); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;
-}
-.rv-box-label {
-  font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 700;
-  letter-spacing: 0.22em; text-transform: uppercase; color: var(--review); margin-bottom: 10px;
-}
-.rv-stats { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; }
-.rv-stat { display: flex; flex-direction: column; gap: 2px; }
-.rv-stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700; color: var(--light); }
-.rv-stat-label { font-size: 9px; color: var(--muted-2); letter-spacing: 0.1em; text-transform: uppercase; }
-.rv-list { display: flex; flex-direction: column; gap: 8px; }
-.rv-item {
-  background: rgba(96,165,250,0.05); border: 1px solid rgba(96,165,250,0.1);
-  border-radius: 8px; padding: 10px 12px;
-}
-.rv-item-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-.rv-stars { font-size: 11px; color: var(--gold); }
-.rv-author { font-size: 10px; color: var(--muted-2); font-family: 'Space Grotesk', sans-serif; }
-.rv-text { font-size: 12px; color: var(--muted-3); line-height: 1.6; }
-.rv-owner-reply { font-size: 11px; color: var(--green); margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(96,165,250,0.1); }
 
 .contact-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
 .contact-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none; transition: all 0.2s; font-family: 'Outfit', sans-serif; }
@@ -453,7 +451,6 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
   <div class="panel">
     <div class="panel-corner"></div>
 
-    <!-- fontes ativas — informativo -->
     <div class="sources-info">
       <span class="sources-info-label">Fontes ativas</span>
       <span class="source-chip source-chip-google">📍 Google Maps</span>
@@ -475,6 +472,12 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
         <div class="tag" onclick="pickTag(this,'odontologia')">🦷 Odonto</div>
       </div>
       <input type="text" id="nicheInput" class="input" placeholder="Ou especifique outro segmento...">
+
+      <!-- ── VARIANTES DE BUSCA ── -->
+      <div class="variant-row" id="variantRow" style="display:none">
+        <span class="variant-label">Variante</span>
+        <div class="variant-chips" id="variantChips"></div>
+      </div>
     </div>
 
     <div class="row-2" style="margin-bottom:16px">
@@ -503,6 +506,12 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
       <input type="text" id="offerInput" class="input" style="margin-bottom:0" placeholder="Ex: criação de sites e landing pages, gestão de tráfego...">
     </div>
 
+    <!-- ── DEDUP BADGE ── -->
+    <div class="dedup-badge" id="dedupBadge">
+      <span id="dedupText">0 leads já vistos serão filtrados</span>
+      <button class="dedup-reset" onclick="resetDedup()" title="Limpar histórico">↺ resetar</button>
+    </div>
+
     <button class="btn-primary" id="searchBtn" onclick="hunt()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       MAPEAR OPORTUNIDADES
@@ -525,7 +534,7 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
   </div>
 
   <div class="error" id="errBox"></div>
-  <div class="empty" id="emptyBox">Nenhuma oportunidade encontrada. Tente outro segmento ou cidade.</div>
+  <div class="empty" id="emptyBox">Nenhuma oportunidade encontrada. Tente outro segmento, variante ou cidade.</div>
 
   <div class="results-meta" id="resultsMeta">
     <div>
@@ -537,8 +546,6 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
   <div class="filters-bar" id="filtersBar">
     <button class="filter-btn active" onclick="applyFilter(this,'all')">Todos</button>
     <button class="filter-btn" onclick="applyFilter(this,'hot')">🔥 Quente</button>
-    <button class="filter-btn" onclick="applyFilter(this,'google')">📍 Google</button>
-    <button class="filter-btn" onclick="applyFilter(this,'igonly')">📸 Instagram</button>
     <button class="filter-btn" onclick="applyFilter(this,'phone')">Com telefone</button>
     <button class="filter-btn" onclick="applyFilter(this,'site')">Com site</button>
     <button class="filter-btn" onclick="applyFilter(this,'instagram')">Com Instagram</button>
@@ -623,6 +630,104 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
   resizeCanvas(); animate();
 })();
 
+/* ══════════════════════════════════════════
+   VARIANTES DE BUSCA — opção 3
+   Cada nicho tem termos alternativos.
+   Ao selecionar um nicho, os chips aparecem.
+   O chip ativo define o termo real enviado ao Apify.
+══════════════════════════════════════════ */
+const VARIANTES = {
+  'salão de beleza':  ['salão de beleza', 'cabeleireiro', 'barbearia', 'estética', 'salão feminino'],
+  'restaurante':      ['restaurante', 'lanchonete', 'pizzaria', 'churrascaria', 'bistrô'],
+  'clínica':          ['clínica médica', 'consultório médico', 'clínica de saúde', 'clínica especializada', 'posto médico'],
+  'loja de roupas':   ['loja de roupas', 'boutique', 'loja de moda', 'loja de vestuário', 'moda feminina'],
+  'academia':         ['academia de ginástica', 'crossfit', 'musculação', 'studio de pilates', 'fitness center'],
+  'pet shop':         ['pet shop', 'veterinário', 'clínica veterinária', 'banho e tosa', 'loja de animais'],
+  'imobiliária':      ['imobiliária', 'corretor de imóveis', 'agência imobiliária', 'construtora', 'loteadora'],
+  'contabilidade':    ['escritório de contabilidade', 'contador', 'contabilidade empresarial', 'assessoria contábil'],
+  'advocacia':        ['escritório de advocacia', 'advogado', 'consultório jurídico', 'advogado trabalhista'],
+  'odontologia':      ['clínica odontológica', 'dentista', 'ortodontia', 'odontologia estética', 'implante dental'],
+};
+
+let activeVariant = null;
+
+function pickTag(el, val) {
+  document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('nicheInput').value = val;
+  renderVariants(val);
+  updateDedupBadge();
+}
+
+function renderVariants(niche) {
+  const row = document.getElementById('variantRow');
+  const chips = document.getElementById('variantChips');
+  const variants = VARIANTES[niche];
+  if (!variants) { row.style.display = 'none'; activeVariant = null; return; }
+
+  chips.innerHTML = variants.map((v, i) =>
+    `<span class="variant-chip${i === 0 ? ' active' : ''}" onclick="selectVariant(this,'${v}')">${v}</span>`
+  ).join('');
+  activeVariant = variants[0];
+  row.style.display = 'flex';
+}
+
+function selectVariant(el, val) {
+  document.querySelectorAll('.variant-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  activeVariant = val;
+}
+
+/* ══════════════════════════════════════════
+   DEDUPLICAÇÃO — opção 2
+   Salva placeIds já vistos no localStorage.
+   Filtra antes de renderizar e de enviar para análise.
+══════════════════════════════════════════ */
+const DEDUP_KEY = 'vhalen_seen_ids';
+
+function getSeenIds() {
+  try { return new Set(JSON.parse(localStorage.getItem(DEDUP_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+
+function saveSeenIds(ids) {
+  try { localStorage.setItem(DEDUP_KEY, JSON.stringify([...ids])); } catch {}
+}
+
+function addSeenIds(places) {
+  const seen = getSeenIds();
+  places.forEach(p => { if (p.placeId || p.id) seen.add(p.placeId || p.id); });
+  saveSeenIds(seen);
+}
+
+function filterNewPlaces(places) {
+  const seen = getSeenIds();
+  return places.filter(p => {
+    const id = p.placeId || p.id;
+    return !id || !seen.has(id);
+  });
+}
+
+function resetDedup() {
+  localStorage.removeItem(DEDUP_KEY);
+  updateDedupBadge();
+}
+
+function updateDedupBadge() {
+  const seen = getSeenIds();
+  const badge = document.getElementById('dedupBadge');
+  const text = document.getElementById('dedupText');
+  if (seen.size > 0) {
+    text.textContent = `${seen.size} lead${seen.size > 1 ? 's' : ''} já vistos — serão filtrados`;
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+}
+
+// Atualiza badge ao carregar
+updateDedupBadge();
+
 /* ── FILTROS ── */
 let allLeads = [];
 let activeFilter = 'all';
@@ -637,8 +742,6 @@ function applyFilter(btn, filter) {
 function getFilteredLeads() {
   switch (activeFilter) {
     case 'hot':       return allLeads.filter(l => l.pontuacao === 'alta');
-    case 'google':    return allLeads.filter(l => l.source === 'google');
-    case 'igonly':    return allLeads.filter(l => l.source === 'instagram');
     case 'phone':     return allLeads.filter(l => l.telefone);
     case 'site':      return allLeads.filter(l => l.site);
     case 'instagram': return allLeads.filter(l => l.instagram);
@@ -684,18 +787,12 @@ function initTilt(card) {
 /* ── UTILS ── */
 const API_URL = window.location.origin + '/api/search';
 
-function pickTag(el, val) {
-  document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('nicheInput').value = val;
-}
-
 /* ── TICKER ── */
 const TICKER_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
 const TICKER_MESSAGES = [
   { word: 'MAPEANDO',     sub: 'Buscando oportunidades no Google Maps...' },
   { word: 'COLETANDO',    sub: 'Extraindo dados de presença digital...' },
-  { word: 'ENRIQUECENDO', sub: 'Analisando Instagram e reviews dos clientes...' },
+  { word: 'ENRIQUECENDO', sub: 'Analisando Instagram dos leads...' },
   { word: 'ANALISANDO',   sub: 'Identificando falhas estratégicas com IA...' },
 ];
 let tickerAnimId = null, tickerMsgInterval = null, tickerMsgIndex = 0;
@@ -759,11 +856,15 @@ function clearErr() { document.getElementById('errBox').classList.remove('show')
 
 /* ── HUNT ── */
 async function hunt() {
-  const niche = document.getElementById('nicheInput').value.trim();
-  const city  = document.getElementById('cityInput').value.trim();
-  const qty   = document.getElementById('qtyInput').value;
-  const offer = document.getElementById('offerInput').value.trim();
-  if (!niche || !city) { showErr('Preencha o segmento e a cidade.'); return; }
+  const nicheRaw = document.getElementById('nicheInput').value.trim();
+  const city     = document.getElementById('cityInput').value.trim();
+  const qty      = document.getElementById('qtyInput').value;
+  const offer    = document.getElementById('offerInput').value.trim();
+
+  if (!nicheRaw || !city) { showErr('Preencha o segmento e a cidade.'); return; }
+
+  // Usa a variante ativa se disponível, senão usa o valor do input
+  const niche = activeVariant || nicheRaw;
 
   clearErr();
   document.getElementById('list').innerHTML = '';
@@ -777,7 +878,6 @@ async function hunt() {
     setStatus(0);
     startTickerLoop(0);
 
-    // ── SEARCH — dispara os dois em paralelo ──
     const searchRes = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -791,7 +891,6 @@ async function hunt() {
 
     setStatus(1);
 
-    // ── POLLING — Fase 1: Google Maps → Fase 2: Instagram + Reviews ──
     let places = null;
     let pollState = { runId, datasetId, qty };
 
@@ -807,7 +906,6 @@ async function hunt() {
       if (stData.status === 'done')   { places = stData.places; break; }
       if (stData.status === 'failed') throw new Error('Busca falhou: ' + stData.reason);
 
-      // Fase 2 — status.js disparou enrichment actors
       if (stData.phase === 2) {
         setStatus(2);
         pollState = {
@@ -816,8 +914,6 @@ async function hunt() {
           igEnrichDatasetId: stData.igEnrichDatasetId,
           igPostRunId:       stData.igPostRunId,
           igPostDatasetId:   stData.igPostDatasetId,
-          reviewsRunId:      stData.reviewsRunId,
-          reviewsDatasetId:  stData.reviewsDatasetId,
           googleDatasetId:   stData.googleDatasetId || datasetId,
           googleQty:         stData.googleQty       || qty
         };
@@ -829,16 +925,32 @@ async function hunt() {
       clearStatus(); btn.disabled = false; return;
     }
 
+    // ── DEDUP: filtra leads já vistos antes de analisar ──
+    const newPlaces = filterNewPlaces(places);
+    const dedupCount = places.length - newPlaces.length;
+
+    if (newPlaces.length === 0) {
+      document.getElementById('emptyBox').textContent =
+        `Todos os ${places.length} leads já foram vistos. Tente outra variante de busca ou resete o histórico.`;
+      document.getElementById('emptyBox').classList.add('show');
+      clearStatus(); btn.disabled = false;
+      updateDedupBadge();
+      return;
+    }
+
     setStatus(3);
     const analysisRes = await fetch(window.location.origin + '/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ places, niche, city, offer })
+      body: JSON.stringify({ places: newPlaces, niche: nicheRaw, city, offer })
     });
     const analysis = await analysisRes.json();
 
-    // ── MONTA LEADS FINAIS ──
-    const leadsRaw = places.map(p => {
+    // Salva os IDs vistos agora
+    addSeenIds(places);
+    updateDedupBadge();
+
+    const leadsRaw = newPlaces.map(p => {
       const socialLinks = p.socialLinks || [];
       let instagram = socialLinks.find(s => s && s.toLowerCase().includes('instagram.com')) || '';
       let site = p.website || '';
@@ -851,8 +963,7 @@ async function hunt() {
         avaliacao:       p.totalScore ? p.totalScore.toFixed(1) : null,
         totalAvaliacoes: p.reviewsCount || 0,
         site, instagram,
-        igEnriched:      p.igEnriched      || null,
-        reviewsEnriched: p.reviewsEnriched || null
+        igEnriched:      p.igEnriched || null,
       };
     });
 
@@ -873,12 +984,13 @@ async function hunt() {
     document.querySelector('.filter-btn').classList.add('active');
 
     const igCount = final.filter(l => l.igEnriched).length;
-    const rvCount = final.filter(l => l.reviewsEnriched).length;
-    document.getElementById('resultsLabel').textContent = `${final.length} oportunidades — ${niche} em ${city}`;
-    const parts = [];
-    if (igCount > 0) parts.push(`📸 ${igCount} com Instagram`);
-    if (rvCount > 0) parts.push(`⭐ ${rvCount} com reviews`);
-    document.getElementById('resultsCount').textContent = parts.length ? parts.join(' · ') : 'Toque no script para copiar';
+    const label = dedupCount > 0
+      ? `${final.length} oportunidades novas — ${nicheRaw} em ${city} (${dedupCount} duplicatas removidas)`
+      : `${final.length} oportunidades — ${nicheRaw} em ${city}`;
+    document.getElementById('resultsLabel').textContent = label;
+    document.getElementById('resultsCount').textContent = igCount > 0
+      ? `📸 ${igCount} com Instagram`
+      : 'Toque no script para copiar';
 
     document.getElementById('resultsMeta').classList.add('show');
     document.getElementById('filtersBar').classList.add('show');
@@ -904,7 +1016,6 @@ function buildCard(l, i) {
   const siteHtml = l.site      ? `<a href="${l.site}"      target="_blank" class="contact-btn btn-site">🌐 Site</a>` : '';
   const igHtml   = l.instagram ? `<a href="${l.instagram}" target="_blank" class="contact-btn btn-ig">📸 Instagram</a>` : '';
 
-  // ── Bloco Instagram ──
   let igBoxHtml = '';
   if (l.igEnriched) {
     const ig = l.igEnriched;
@@ -927,36 +1038,6 @@ function buildCard(l, i) {
     </div>`;
   }
 
-  // ── Bloco Reviews ──
-  let rvBoxHtml = '';
-  if (l.reviewsEnriched) {
-    const rv = l.reviewsEnriched;
-    const starsStr = n => n ? '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n)) : '—';
-    const rvItems = (rv.reviews || [])
-      .filter(r => r.texto && r.texto.length > 5)
-      .slice(0, 5)
-      .map(r => `
-        <div class="rv-item">
-          <div class="rv-item-header">
-            <span class="rv-stars">${starsStr(r.nota)} ${r.nota ? r.nota + '★' : ''}</span>
-            <span class="rv-author">${r.autor || 'Anônimo'}</span>
-          </div>
-          <div class="rv-text">"${r.texto.slice(0, 160)}${r.texto.length > 160 ? '...' : ''}"</div>
-          ${r.respostaOwner ? `<div class="rv-owner-reply">↩ Dono respondeu</div>` : ''}
-        </div>`).join('');
-
-    rvBoxHtml = `
-    <div class="rv-box">
-      <div class="rv-box-label">⭐ Voz dos Clientes — ${rv.totalScraped} reviews analisadas</div>
-      <div class="rv-stats">
-        <div class="rv-stat"><div class="rv-stat-value">${rv.avgRating || '—'}</div><div class="rv-stat-label">Média calculada</div></div>
-        <div class="rv-stat"><div class="rv-stat-value" style="color:var(--red)">${rv.qtdNegativas||0}</div><div class="rv-stat-label">Reviews negativas</div></div>
-        <div class="rv-stat"><div class="rv-stat-value" style="color:var(--green)">${rv.qtdPositivas||0}</div><div class="rv-stat-label">Reviews positivas</div></div>
-      </div>
-      ${rvItems ? `<div class="rv-list">${rvItems}</div>` : ''}
-    </div>`;
-  }
-
   return `<div class="card">
     <div class="card-inner" style="animation-delay:${delay}s">
       <div class="card-header">
@@ -975,7 +1056,6 @@ function buildCard(l, i) {
           <div class="diag-text">${l.problemas || 'Analisando...'}</div>
         </div>
         ${igBoxHtml}
-        ${rvBoxHtml}
         <div class="contact-row">${phoneHtml}${siteHtml}${igHtml}</div>
         <button class="scripts-toggle" onclick="tog(this,'sc${i}')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
