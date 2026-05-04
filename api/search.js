@@ -20,12 +20,23 @@ export default async function handler(req, res) {
           locationQuery: `${city}, Brasil`,
           maxCrawledPlacesPerSearch: parseInt(qty),
           language: 'pt-BR',
-          maxImages: 0, maxReviews: 0,
-          includeWebResults: false, scrapeContacts: false,
-          scrapeDirectories: false, skipClosedPlaces: false,
-          searchMatching: 'all', website: 'allPlaces',
-          maxQuestions: 0, reviewsSort: 'newest',
-          reviewsOrigin: 'all', allPlacesNoSearchAction: ''
+          maxImages: 0,
+          maxReviews: 0,
+          includeWebResults: false,
+
+          // ✅ ATIVADO — visita o site de cada negócio e extrai:
+          // email, Facebook, Instagram, LinkedIn, TikTok, YouTube
+          // Custo adicional: $2/1.000 lugares com site
+          scrapeContacts: true,
+
+          scrapeDirectories: false,
+          skipClosedPlaces: false,
+          searchMatching: 'all',
+          website: 'allPlaces',
+          maxQuestions: 0,
+          reviewsSort: 'newest',
+          reviewsOrigin: 'all',
+          allPlacesNoSearchAction: ''
         })
       }
     );
