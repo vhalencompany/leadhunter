@@ -1244,7 +1244,8 @@ function exportCSV() {
       `"${(l.dm || '').replace(/"/g, '""')}"`,
     ]);
 
-  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const SEP = ';';
+  const csv = [headers.join(SEP), ...rows.map(r => r.join(SEP))].join('\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
