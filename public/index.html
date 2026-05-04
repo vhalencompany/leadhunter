@@ -301,6 +301,7 @@ header {
 .sd.active { background: linear-gradient(90deg, var(--orange), var(--gold)); animation: shimmer 1.5s ease-in-out infinite; }
 
 @keyframes shimmer { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 .filters-bar { display: none; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
 .filters-bar.show { display: flex; }
@@ -387,6 +388,57 @@ header {
 .btn-ig { background: rgba(193,53,132,0.08); border: 1px solid rgba(193,53,132,0.25); color: #C13584; }
 .btn-ig:hover { background: rgba(193,53,132,0.15); transform: translateY(-1px); }
 .no-phone { font-size: 12px; color: var(--muted); }
+
+/* ── ENRICH BOX ── */
+.enrich-trigger {
+  width: 100%; background: transparent;
+  border: 1px dashed var(--dark-6); border-radius: 8px;
+  padding: 9px 18px; color: var(--muted-2);
+  font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.08em; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.enrich-trigger:hover { border-color: rgba(200,169,110,0.4); color: var(--gold); border-style: solid; background: var(--gold-dim); }
+.enrich-trigger:disabled { opacity: 0.4; cursor: not-allowed; }
+.enrich-trigger.loading { border-style: solid; border-color: rgba(200,169,110,0.3); color: var(--gold); }
+.enrich-trigger.done { border-style: solid; border-color: rgba(74,222,128,0.3); color: var(--green); }
+
+.enrich-box {
+  background: var(--dark-3); border: 1px solid var(--dark-5);
+  border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
+  animation: fadeIn 0.3s ease;
+}
+.enrich-section { margin-bottom: 12px; }
+.enrich-section:last-child { margin-bottom: 0; }
+.enrich-section-label {
+  font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.enrich-label-cnpj { color: var(--gold); }
+.enrich-label-wa { color: #25D366; }
+
+.enrich-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.enrich-field { display: flex; flex-direction: column; gap: 2px; }
+.enrich-field-label { font-size: 9px; color: var(--muted-2); letter-spacing: 0.08em; text-transform: uppercase; }
+.enrich-field-value { font-size: 12px; color: var(--light); font-family: 'Space Grotesk', sans-serif; font-weight: 500; }
+.enrich-field-value.alert { color: var(--red); }
+.enrich-field-value.ok { color: var(--green); }
+.enrich-field-value.warn { color: var(--orange); }
+
+.wa-status {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  font-family: 'Space Grotesk', sans-serif; letter-spacing: 0.08em;
+}
+.wa-active { background: rgba(37,211,102,0.08); border: 1px solid rgba(37,211,102,0.25); color: #4ADE80; }
+.wa-inactive { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); color: var(--red); }
+.wa-unknown { background: var(--dark-4); border: 1px solid var(--dark-6); color: var(--muted-2); }
+
+.enrich-divider { height: 1px; background: var(--dark-5); margin: 10px 0; }
 
 .scripts-toggle { width: 100%; background: transparent; border: 1px solid var(--dark-5); border-radius: 8px; padding: 10px 18px; color: var(--muted-2); font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; }
 .scripts-toggle:hover { border-color: rgba(200,169,110,0.3); color: var(--gold); background: var(--gold-dim); }
@@ -1269,6 +1321,11 @@ function buildCard(l, i) {
         </div>
         ${igBoxHtml}
         <div class="contact-row">${phoneHtml}${siteHtml}${igHtml}</div>
+        <button class="enrich-trigger" id="eb${i}" onclick="enrichLead(${i})">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Enriquecer Lead — CNPJ + WhatsApp
+        </button>
+        <div id="enrichBox${i}"></div>
         <button class="scripts-toggle" onclick="tog(this,'sc${i}')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           VER ABORDAGENS
@@ -1288,6 +1345,142 @@ function buildCard(l, i) {
       </div>
     </div>
   </div>`;
+}
+
+/* ══════════════════════════════════════════
+   ENRICH LEAD — CNPJ + WhatsApp
+   Chamado por card, sob demanda.
+══════════════════════════════════════════ */
+async function enrichLead(idx) {
+  const lead = getFilteredLeads()
+    .map(l => ({ ...l, _score: calcScore(l).score }))
+    .sort((a, b) => b._score - a._score)[idx];
+
+  if (!lead) return;
+
+  const btn = document.getElementById(`eb${idx}`);
+  const box = document.getElementById(`enrichBox${idx}`);
+  if (!btn || !box) return;
+
+  // Já foi enriquecido
+  if (btn.classList.contains('done')) return;
+
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.innerHTML = `
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite">
+      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+    </svg>
+    Consultando Receita Federal e WhatsApp...`;
+
+  try {
+    const res = await fetch(window.location.origin + '/api/enrich', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nome:     lead.nome,
+        telefone: lead.telefone,
+        cidade:   lead.endereco || ''
+      })
+    });
+
+    const data = await res.json();
+    box.innerHTML = buildEnrichBox(data, lead);
+
+    btn.classList.remove('loading');
+    btn.classList.add('done');
+    btn.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      Enriquecido`;
+
+  } catch (e) {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Enriquecer Lead — CNPJ + WhatsApp`;
+    box.innerHTML = `<div style="font-size:11px;color:var(--red);padding:8px 0">Erro ao enriquecer: ${e.message}</div>`;
+  }
+}
+
+function buildEnrichBox(data, lead) {
+  const sections = [];
+
+  // ── CNPJ ──
+  if (data.cnpj) {
+    const c = data.cnpj;
+    const situacaoClass = (c.situacao || '').toLowerCase().includes('ativa') ? 'ok'
+      : (c.situacao || '').toLowerCase().includes('baixada') ? 'alert' : 'warn';
+
+    const anosAberto = c.dataAbertura
+      ? Math.floor((Date.now() - new Date(c.dataAbertura.split('/').reverse().join('-'))) / (365.25 * 86400000))
+      : null;
+
+    sections.push(`
+    <div class="enrich-section">
+      <div class="enrich-section-label enrich-label-cnpj">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        Receita Federal — CNPJ
+      </div>
+      <div class="enrich-grid">
+        ${c.cnpj ? `<div class="enrich-field"><div class="enrich-field-label">CNPJ</div><div class="enrich-field-value">${formatCNPJ(c.cnpj)}</div></div>` : ''}
+        ${c.situacao ? `<div class="enrich-field"><div class="enrich-field-label">Situação</div><div class="enrich-field-value ${situacaoClass}">${c.situacao}</div></div>` : ''}
+        ${c.dataAbertura ? `<div class="enrich-field"><div class="enrich-field-label">Abertura</div><div class="enrich-field-value">${c.dataAbertura}${anosAberto !== null ? ` <span style="color:var(--muted-2);font-size:10px">(${anosAberto} anos)</span>` : ''}</div></div>` : ''}
+        ${c.porte ? `<div class="enrich-field"><div class="enrich-field-label">Porte</div><div class="enrich-field-value">${c.porte}</div></div>` : ''}
+        ${c.socio ? `<div class="enrich-field" style="grid-column:1/-1"><div class="enrich-field-label">Sócio principal</div><div class="enrich-field-value">${c.socio}</div></div>` : ''}
+        ${c.atividadePrinc ? `<div class="enrich-field" style="grid-column:1/-1"><div class="enrich-field-label">Atividade principal</div><div class="enrich-field-value" style="font-size:11px;color:var(--muted-3)">${c.atividadePrinc}</div></div>` : ''}
+        ${c.capital ? `<div class="enrich-field"><div class="enrich-field-label">Capital social</div><div class="enrich-field-value">R$ ${Number(c.capital).toLocaleString('pt-BR', {minimumFractionDigits:2})}</div></div>` : ''}
+        ${c.municipio ? `<div class="enrich-field"><div class="enrich-field-label">Município</div><div class="enrich-field-value">${c.municipio}/${c.uf || ''}</div></div>` : ''}
+      </div>
+    </div>`);
+  } else {
+    sections.push(`
+    <div class="enrich-section">
+      <div class="enrich-section-label enrich-label-cnpj">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        Receita Federal — CNPJ
+      </div>
+      <div style="font-size:12px;color:var(--muted-2)">Empresa não encontrada na base da Receita Federal com esse nome.</div>
+    </div>`);
+  }
+
+  // ── DIVIDER ──
+  if (data.whatsapp !== null) sections.push('<div class="enrich-divider"></div>');
+
+  // ── WHATSAPP ──
+  if (data.whatsapp !== null) {
+    const wa = data.whatsapp;
+    let waHtml;
+    if (wa.erro) {
+      waHtml = `<span class="wa-status wa-unknown">— ${wa.erro}</span>`;
+    } else if (wa.ativo === true) {
+      waHtml = `
+        <span class="wa-status wa-active">✓ WhatsApp ativo</span>
+        ${wa.formatado ? `<div style="font-size:11px;color:var(--muted-2);margin-top:6px">${wa.formatado}</div>` : ''}
+        ${lead.telefone ? `<a href="https://wa.me/${wa.numero}" target="_blank" class="contact-btn btn-wa" style="margin-top:8px;display:inline-flex">📱 Abrir conversa</a>` : ''}`;
+    } else if (wa.ativo === false) {
+      waHtml = `<span class="wa-status wa-inactive">✗ WhatsApp não encontrado</span>`;
+    } else {
+      waHtml = `<span class="wa-status wa-unknown">— Não foi possível validar</span>`;
+    }
+
+    sections.push(`
+    <div class="enrich-section">
+      <div class="enrich-section-label enrich-label-wa">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Validação WhatsApp
+      </div>
+      ${waHtml}
+    </div>`);
+  }
+
+  return `<div class="enrich-box">${sections.join('')}</div>`;
+}
+
+function formatCNPJ(cnpj) {
+  const d = (cnpj || '').replace(/\D/g, '');
+  if (d.length !== 14) return cnpj;
+  return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-${d.slice(12)}`;
 }
 
 function tog(btn, id) {
