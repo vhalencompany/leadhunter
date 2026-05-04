@@ -405,6 +405,48 @@ header {
 .copy-tag { font-size: 10px; text-align: right; margin-top: 6px; color: var(--muted); transition: color 0.2s; font-family: 'Space Grotesk', sans-serif; letter-spacing: 0.05em; }
 .copy-tag.done { color: var(--green); }
 
+/* ── SCORE DE PRIORIDADE ── */
+.score-ring {
+  position: relative; width: 52px; height: 52px; flex-shrink: 0;
+}
+.score-ring svg { transform: rotate(-90deg); }
+.score-ring-bg { fill: none; stroke: var(--dark-5); stroke-width: 3; }
+.score-ring-fill { fill: none; stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 0.8s cubic-bezier(0.22,1,0.36,1), stroke 0.4s; }
+.score-ring-label {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0;
+}
+.score-ring-num {
+  font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;
+  line-height: 1; color: var(--light);
+}
+.score-ring-pts {
+  font-size: 7px; color: var(--muted-2); letter-spacing: 0.08em;
+  text-transform: uppercase; font-family: 'Space Grotesk', sans-serif;
+}
+
+.score-breakdown {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+}
+.score-item {
+  display: flex; align-items: center; gap: 4px;
+  font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600;
+  letter-spacing: 0.08em; padding: 3px 8px; border-radius: 5px;
+}
+.score-item.pos { background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.2); color: var(--green); }
+.score-item.neg { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); color: var(--red); }
+
+/* ── BOTÃO CSV ── */
+.btn-csv {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; background: var(--dark-3); border: 1px solid var(--dark-5);
+  border-radius: 8px; font-family: 'Space Grotesk', sans-serif; font-size: 10px;
+  font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted-2); cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+}
+.btn-csv:hover { border-color: rgba(200,169,110,0.4); color: var(--gold); background: var(--gold-dim); }
+.btn-csv.done { border-color: rgba(74,222,128,0.4); color: var(--green); background: rgba(74,222,128,0.06); }
+
 .empty { display: none; text-align: center; padding: 80px 24px; color: var(--muted-2); font-size: 14px; }
 .empty.show { display: block; }
 
@@ -541,6 +583,10 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
       <div class="results-label" id="resultsLabel"></div>
       <div class="results-sub" id="resultsCount">Toque no script para copiar</div>
     </div>
+    <button class="btn-csv" id="csvBtn" onclick="exportCSV()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      CSV
+    </button>
   </div>
 
   <div class="filters-bar" id="filtersBar">
@@ -752,7 +798,9 @@ function getFilteredLeads() {
 }
 
 function renderLeads() {
-  const filtered = getFilteredLeads();
+  const filtered = getFilteredLeads()
+    .map(l => ({ ...l, _score: calcScore(l).score }))
+    .sort((a, b) => b._score - a._score);
   const list = document.getElementById('list');
   list.innerHTML = '';
   filtered.forEach((lead, idx) => {
@@ -1003,12 +1051,175 @@ async function hunt() {
   btn.disabled = false;
 }
 
+/* ══════════════════════════════════════════
+   SCORE DE PRIORIDADE VISUAL
+   Critérios transparentes, 0-100 pts.
+   Calculado no frontend com dados já disponíveis.
+══════════════════════════════════════════ */
+function calcScore(l) {
+  let score = 0;
+  const breakdown = [];
+
+  // Ausência de site (+25) — oportunidade direta
+  if (!l.site) {
+    score += 25;
+    breakdown.push({ label: 'Sem site', pts: +25, pos: true });
+  }
+
+  // Avaliação baixa (+20) — dor visível
+  const rating = parseFloat(l.avaliacao);
+  if (!l.avaliacao) {
+    score += 15;
+    breakdown.push({ label: 'Sem avaliação', pts: +15, pos: true });
+  } else if (rating < 3.8) {
+    score += 20;
+    breakdown.push({ label: `Nota ${rating}`, pts: +20, pos: true });
+  } else if (rating < 4.2) {
+    score += 8;
+    breakdown.push({ label: `Nota ${rating}`, pts: +8, pos: true });
+  }
+
+  // Poucas avaliações (+10) — fraca presença
+  if (l.totalAvaliacoes < 10) {
+    score += 10;
+    breakdown.push({ label: `${l.totalAvaliacoes} avaliações`, pts: +10, pos: true });
+  }
+
+  // Instagram parado (+15) — conteúdo morto
+  if (l.igEnriched) {
+    const days = l.igEnriched.daysSinceLastPost;
+    if (days != null && days > 30) {
+      score += 15;
+      breakdown.push({ label: `Instagram parado ${days}d`, pts: +15, pos: true });
+    }
+    // Poucos seguidores (+8) — audiência fraca
+    if ((l.igEnriched.followers || 0) < 500) {
+      score += 8;
+      breakdown.push({ label: `${l.igEnriched.followers} seguidores`, pts: +8, pos: true });
+    }
+  }
+
+  // Sem Instagram mas tem presença Google (+10) — gap digital
+  if (!l.instagram && l.totalAvaliacoes > 5) {
+    score += 10;
+    breakdown.push({ label: 'Sem Instagram', pts: +10, pos: true });
+  }
+
+  // Sem telefone (-8) — dificulta abordagem
+  if (!l.telefone) {
+    score -= 8;
+    breakdown.push({ label: 'Sem telefone', pts: -8, pos: false });
+  }
+
+  // IA marcou como alta (+12)
+  if (l.pontuacao === 'alta') {
+    score += 12;
+    breakdown.push({ label: 'IA: alta prioridade', pts: +12, pos: true });
+  }
+
+  return { score: Math.max(0, Math.min(100, score)), breakdown };
+}
+
+function scoreColor(s) {
+  if (s >= 70) return '#F87171'; // vermelho quente — oportunidade crítica
+  if (s >= 45) return '#E8703A'; // laranja — alta
+  if (s >= 25) return '#C8A96E'; // gold — média
+  return '#44444E';              // muted — baixa
+}
+
+function buildScoreRing(score, breakdown) {
+  const r = 22, circ = 2 * Math.PI * r;
+  const offset = circ - (score / 100) * circ;
+  const color = scoreColor(score);
+  const itemsHtml = breakdown.map(b =>
+    `<span class="score-item ${b.pos ? 'pos' : 'neg'}">${b.pos ? '+' : ''}${b.pts} ${b.label}</span>`
+  ).join('');
+
+  return `
+  <div style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div class="score-ring">
+        <svg width="52" height="52" viewBox="0 0 52 52">
+          <circle class="score-ring-bg" cx="26" cy="26" r="${r}"/>
+          <circle class="score-ring-fill"
+            cx="26" cy="26" r="${r}"
+            stroke="${color}"
+            stroke-dasharray="${circ}"
+            stroke-dashoffset="${offset}"
+          />
+        </svg>
+        <div class="score-ring-label">
+          <span class="score-ring-num">${score}</span>
+          <span class="score-ring-pts">pts</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:${color};margin-bottom:6px">Score de Oportunidade</div>
+        <div class="score-breakdown">${itemsHtml}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════
+   EXPORTAR CSV
+══════════════════════════════════════════ */
+function exportCSV() {
+  if (!allLeads.length) return;
+
+  const headers = [
+    'Score', 'Nome', 'Endereço', 'Telefone', 'Avaliação', 'Total Avaliações',
+    'Site', 'Instagram', 'Seguidores IG', 'Último Post (dias)',
+    'Prioridade IA', 'Diagnóstico', 'DM WhatsApp'
+  ];
+
+  const rows = allLeads
+    .map(l => ({ ...l, _score: calcScore(l).score }))
+    .sort((a, b) => b._score - a._score)
+    .map(l => [
+      l._score,
+      `"${(l.nome || '').replace(/"/g, '""')}"`,
+      `"${(l.endereco || '').replace(/"/g, '""')}"`,
+      l.telefone || '',
+      l.avaliacao || '',
+      l.totalAvaliacoes || 0,
+      l.site || '',
+      l.instagram || '',
+      l.igEnriched?.followers || '',
+      l.igEnriched?.daysSinceLastPost ?? '',
+      l.pontuacao || '',
+      `"${(l.problemas || '').replace(/"/g, '""')}"`,
+      `"${(l.dm || '').replace(/"/g, '""')}"`,
+    ]);
+
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const niche = document.getElementById('nicheInput').value || 'leads';
+  const city  = document.getElementById('cityInput').value  || '';
+  a.href = url;
+  a.download = `vhalen_${niche}_${city}_${new Date().toISOString().slice(0,10)}.csv`.replace(/\s+/g, '_');
+  a.click();
+  URL.revokeObjectURL(url);
+
+  const btn = document.getElementById('csvBtn');
+  btn.classList.add('done');
+  btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Exportado`;
+  setTimeout(() => {
+    btn.classList.remove('done');
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV`;
+  }, 3000);
+}
+
 /* ── BUILD CARD ── */
 function buildCard(l, i) {
   const isHot = l.pontuacao === 'alta';
   const delay = i * 0.08;
   const phone = (l.telefone || '').replace(/\D/g, '');
   const stars = l.avaliacao ? `⭐ ${l.avaliacao} (${l.totalAvaliacoes})` : '⭐ Sem avaliação';
+  const { score, breakdown } = calcScore(l);
+  const sColor = scoreColor(score);
 
   const phoneHtml = phone
     ? `<a href="https://wa.me/55${phone}" target="_blank" class="contact-btn btn-wa">📱 ${l.telefone}</a>`
@@ -1048,9 +1259,10 @@ function buildCard(l, i) {
             <span class="meta-chip">${stars}</span>
           </div>
         </div>
-        <div class="badge ${isHot ? 'badge-hot' : 'badge-warm'}">${isHot ? '🔥 Quente' : '✦ Médio'}</div>
+        <div class="badge ${isHot ? 'badge-hot' : 'badge-warm'}" style="border-color:${sColor};color:${sColor}">${score} pts</div>
       </div>
       <div class="card-body">
+        ${buildScoreRing(score, breakdown)}
         <div class="diag-box">
           <div class="diag-label">Diagnóstico Estratégico</div>
           <div class="diag-text">${l.problemas || 'Analisando...'}</div>
