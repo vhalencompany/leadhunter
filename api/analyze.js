@@ -27,6 +27,12 @@ export default async function handler(req, res) {
     if (!p.website) sinais.push({ tipo: 'ausencia_site', peso: 9, texto: 'não possui site próprio' });
     if (!ig) sinais.push({ tipo: 'ausencia_instagram', peso: 7, texto: 'não possui Instagram identificado' });
 
+    // Email e Facebook — novos dados via scrapeContacts
+    const temEmail   = !!(p.email   || (p.contactInfo?.emails?.length));
+    const temFacebook = !!(p.facebook || (p.contactInfo?.facebookUrl));
+    if (!temEmail)    sinais.push({ tipo: 'sem_email',    peso: 4, texto: 'sem email de contato público — dificulta outreach digital' });
+    if (!temFacebook) sinais.push({ tipo: 'sem_facebook', peso: 3, texto: 'sem presença identificada no Facebook' });
+
     // 2. Reputação Google
     const nota = p.totalScore ? parseFloat(p.totalScore.toFixed(1)) : null;
     const totalAval = p.reviewsCount || 0;
