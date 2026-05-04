@@ -390,6 +390,70 @@ header {
 .no-phone { font-size: 12px; color: var(--muted); }
 
 /* ── ENRICH BOX ── */
+/* ── PIPELINE DE ABORDAGEM ── */
+.pipeline-panel {
+  display: none; background: var(--dark-2); border: 1px solid var(--dark-4);
+  border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; animation: fadeIn 0.3s ease;
+}
+.pipeline-panel.show { display: block; }
+.pipeline-panel-title {
+  font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin-bottom: 14px;
+}
+.pipeline-counters {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.pipeline-counter {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 10px 14px; border-radius: 10px; border: 1px solid; flex: 1; min-width: 70px;
+}
+.pipeline-counter-num {
+  font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; line-height: 1;
+}
+.pipeline-counter-label {
+  font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Space Grotesk', sans-serif; text-align: center;
+}
+.pc-pending  { background: rgba(74,222,128,0.04);  border-color: rgba(74,222,128,0.15);  color: var(--muted-2); }
+.pc-pending .pipeline-counter-num  { color: var(--muted-3); }
+.pc-reached  { background: rgba(200,169,110,0.06); border-color: rgba(200,169,110,0.2);  color: var(--gold); }
+.pc-reached .pipeline-counter-num  { color: var(--gold); }
+.pc-replied  { background: rgba(232,112,58,0.06);  border-color: rgba(232,112,58,0.2);   color: var(--orange); }
+.pc-replied .pipeline-counter-num  { color: var(--orange); }
+.pc-closed   { background: rgba(74,222,128,0.06);  border-color: rgba(74,222,128,0.25);  color: var(--green); }
+.pc-closed .pipeline-counter-num   { color: var(--green); }
+
+/* Status btn no card */
+.status-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.status-label {
+  font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600;
+  letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted-2); flex-shrink: 0;
+}
+.status-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.status-btn {
+  padding: 5px 12px; border-radius: 6px; border: 1px solid var(--dark-6);
+  background: transparent; font-family: 'Space Grotesk', sans-serif; font-size: 10px;
+  font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted-2); cursor: pointer; transition: all 0.2s;
+}
+.status-btn:hover { border-color: rgba(200,169,110,0.3); color: var(--gold); }
+.status-btn.s-pending.active  { background: rgba(68,68,78,0.2);   border-color: var(--muted);   color: var(--muted-3); }
+.status-btn.s-reached.active  { background: var(--gold-dim);       border-color: var(--gold);    color: var(--gold-2); }
+.status-btn.s-replied.active  { background: var(--orange-dim);     border-color: var(--orange);  color: var(--orange); }
+.status-btn.s-closed.active   { background: rgba(74,222,128,0.08); border-color: var(--green);   color: var(--green); }
+
+.status-date {
+  font-size: 9px; color: var(--muted-2); font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 0.05em; margin-left: 2px;
+}
+
+/* Card com status — borda esquerda colorida */
+.card.s-reached { border-left: 2px solid var(--gold); }
+.card.s-replied  { border-left: 2px solid var(--orange); }
+.card.s-closed   { border-left: 2px solid var(--green); }
+
 .enrich-trigger {
   width: 100%; background: transparent;
   border: 1px dashed var(--dark-6); border-radius: 8px;
@@ -649,6 +713,32 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
     <button class="filter-btn" onclick="applyFilter(this,'instagram')">Com Instagram</button>
     <button class="filter-btn" onclick="applyFilter(this,'nosite')">Sem site</button>
     <button class="filter-btn" onclick="applyFilter(this,'nophone')">Sem telefone</button>
+    <button class="filter-btn" onclick="applyFilter(this,'s-pending')">⬜ Pendentes</button>
+    <button class="filter-btn" onclick="applyFilter(this,'s-reached')">📤 Abordados</button>
+    <button class="filter-btn" onclick="applyFilter(this,'s-replied')">💬 Responderam</button>
+    <button class="filter-btn" onclick="applyFilter(this,'s-closed')">✅ Fechados</button>
+  </div>
+
+  <div class="pipeline-panel" id="pipelinePanel">
+    <div class="pipeline-title" style="font-family:'Space Grotesk',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Pipeline de Prospecção</div>
+    <div class="pipeline-counters">
+      <div class="pipeline-counter pc-pending">
+        <div class="pipeline-counter-num" id="pc-pending">0</div>
+        <div class="pipeline-counter-label">Pendentes</div>
+      </div>
+      <div class="pipeline-counter pc-reached">
+        <div class="pipeline-counter-num" id="pc-reached">0</div>
+        <div class="pipeline-counter-label">Abordados</div>
+      </div>
+      <div class="pipeline-counter pc-replied">
+        <div class="pipeline-counter-num" id="pc-replied">0</div>
+        <div class="pipeline-counter-label">Responderam</div>
+      </div>
+      <div class="pipeline-counter pc-closed">
+        <div class="pipeline-counter-num" id="pc-closed">0</div>
+        <div class="pipeline-counter-label">Fechados</div>
+      </div>
+    </div>
   </div>
 
   <div id="list"></div>
@@ -826,6 +916,96 @@ function updateDedupBadge() {
 // Atualiza badge ao carregar
 updateDedupBadge();
 
+/* ══════════════════════════════════════════
+   PIPELINE DE ABORDAGEM
+   4 estados: pending → reached → replied → closed
+   Salvo permanentemente no localStorage por nome do lead.
+══════════════════════════════════════════ */
+const PIPELINE_KEY = 'vhalen_pipeline';
+
+function getPipeline() {
+  try { return JSON.parse(localStorage.getItem(PIPELINE_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+function savePipeline(data) {
+  try { localStorage.setItem(PIPELINE_KEY, JSON.stringify(data)); } catch {}
+}
+
+function getLeadKey(lead) {
+  return (lead.nome || '').trim().toLowerCase().replace(/\s+/g, '_');
+}
+
+function getLeadStatus(lead) {
+  const pipeline = getPipeline();
+  const key = getLeadKey(lead);
+  return pipeline[key] || { status: 'pending', date: null };
+}
+
+function setLeadStatus(lead, status) {
+  const pipeline = getPipeline();
+  const key = getLeadKey(lead);
+  pipeline[key] = { status, date: new Date().toLocaleDateString('pt-BR') };
+  savePipeline(pipeline);
+}
+
+function updatePipelinePanel() {
+  if (!allLeads.length) return;
+  const pipeline = getPipeline();
+  const counts = { pending: 0, reached: 0, replied: 0, closed: 0 };
+  allLeads.forEach(l => {
+    const s = pipeline[getLeadKey(l)]?.status || 'pending';
+    counts[s] = (counts[s] || 0) + 1;
+  });
+  document.getElementById('pc-pending').textContent = counts.pending;
+  document.getElementById('pc-reached').textContent = counts.reached;
+  document.getElementById('pc-replied').textContent = counts.replied;
+  document.getElementById('pc-closed').textContent  = counts.closed;
+  document.getElementById('pipelinePanel').classList.add('show');
+}
+
+function cycleStatusTo(leadIdx, newStatus) {
+  const sorted = getFilteredLeads()
+    .map(l => ({ ...l, _score: calcScore(l).score }))
+    .sort((a, b) => b._score - a._score);
+  const lead = sorted[leadIdx];
+  if (!lead) return;
+
+  setLeadStatus(lead, newStatus);
+  updatePipelinePanel();
+
+  // Atualiza botões sem re-renderizar
+  ['pending','reached','replied','closed'].forEach(s => {
+    const btn = document.getElementById(`sb-${s}-${leadIdx}`);
+    if (btn) btn.classList.toggle('active', s === newStatus);
+  });
+
+  // Atualiza data
+  const dateEl = document.getElementById(`sd-date-${leadIdx}`);
+  if (dateEl) dateEl.textContent = newStatus !== 'pending'
+    ? `· ${new Date().toLocaleDateString('pt-BR')}` : '';
+
+  // Atualiza borda do card
+  const card = document.getElementById(`card-${leadIdx}`);
+  if (card) card.className = 'card' + (newStatus !== 'pending' ? ` s-${newStatus}` : '');
+}
+
+function buildStatusRow(lead, idx) {
+  const { status, date } = getLeadStatus(lead);
+  const dateText = status !== 'pending' && date ? `· ${date}` : '';
+  return `
+  <div class="status-row">
+    <span class="status-label">Status</span>
+    <div class="status-btns">
+      <button class="status-btn s-pending ${status==='pending'?'active':''}" id="sb-pending-${idx}" onclick="cycleStatusTo(${idx},'pending')">⬜ Pendente</button>
+      <button class="status-btn s-reached ${status==='reached'?'active':''}" id="sb-reached-${idx}" onclick="cycleStatusTo(${idx},'reached')">📤 Abordado</button>
+      <button class="status-btn s-replied ${status==='replied'?'active':''}" id="sb-replied-${idx}" onclick="cycleStatusTo(${idx},'replied')">💬 Respondeu</button>
+      <button class="status-btn s-closed  ${status==='closed' ?'active':''}" id="sb-closed-${idx}"  onclick="cycleStatusTo(${idx},'closed')">✅ Fechado</button>
+    </div>
+    <span class="status-date" id="sd-date-${idx}">${dateText}</span>
+  </div>`;
+}
+
 /* ── FILTROS ── */
 let allLeads = [];
 let activeFilter = 'all';
@@ -838,14 +1018,19 @@ function applyFilter(btn, filter) {
 }
 
 function getFilteredLeads() {
+  const pipeline = getPipeline();
   switch (activeFilter) {
-    case 'hot':       return allLeads.filter(l => l.pontuacao === 'alta');
-    case 'phone':     return allLeads.filter(l => l.telefone);
-    case 'site':      return allLeads.filter(l => l.site);
-    case 'instagram': return allLeads.filter(l => l.instagram);
-    case 'nosite':    return allLeads.filter(l => !l.site);
-    case 'nophone':   return allLeads.filter(l => !l.telefone);
-    default:          return allLeads;
+    case 'hot':        return allLeads.filter(l => l.pontuacao === 'alta');
+    case 'phone':      return allLeads.filter(l => l.telefone);
+    case 'site':       return allLeads.filter(l => l.site);
+    case 'instagram':  return allLeads.filter(l => l.instagram);
+    case 'nosite':     return allLeads.filter(l => !l.site);
+    case 'nophone':    return allLeads.filter(l => !l.telefone);
+    case 's-pending':  return allLeads.filter(l => (pipeline[getLeadKey(l)]?.status || 'pending') === 'pending');
+    case 's-reached':  return allLeads.filter(l => pipeline[getLeadKey(l)]?.status === 'reached');
+    case 's-replied':  return allLeads.filter(l => pipeline[getLeadKey(l)]?.status === 'replied');
+    case 's-closed':   return allLeads.filter(l => pipeline[getLeadKey(l)]?.status === 'closed');
+    default:           return allLeads;
   }
 }
 
@@ -866,6 +1051,7 @@ function renderLeads() {
     filtered.length === allLeads.length
       ? 'Toque no script para copiar'
       : `${filtered.length} de ${allLeads.length} oportunidades`;
+  updatePipelinePanel();
 }
 
 function initTilt(card) {
@@ -1302,7 +1488,10 @@ function buildCard(l, i) {
     </div>`;
   }
 
-  return `<div class="card">
+  const { status: leadStatus } = getLeadStatus(l);
+  const cardStatusClass = leadStatus !== 'pending' ? ` s-${leadStatus}` : '';
+
+  return `<div class="card${cardStatusClass}" id="card-${i}">
     <div class="card-inner" style="animation-delay:${delay}s">
       <div class="card-header">
         <div>
@@ -1316,6 +1505,7 @@ function buildCard(l, i) {
       </div>
       <div class="card-body">
         ${buildScoreRing(score, breakdown)}
+        ${buildStatusRow(l, i)}
         <div class="diag-box">
           <div class="diag-label">Diagnóstico Estratégico</div>
           <div class="diag-text">${l.problemas || 'Analisando...'}</div>
