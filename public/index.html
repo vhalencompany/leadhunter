@@ -387,6 +387,10 @@ header {
 .btn-site:hover { background: rgba(200,169,110,0.18); transform: translateY(-1px); }
 .btn-ig { background: rgba(193,53,132,0.08); border: 1px solid rgba(193,53,132,0.25); color: #C13584; }
 .btn-ig:hover { background: rgba(193,53,132,0.15); transform: translateY(-1px); }
+.btn-fb { background: rgba(24,119,242,0.08); border: 1px solid rgba(24,119,242,0.25); color: #1877F2; }
+.btn-fb:hover { background: rgba(24,119,242,0.15); transform: translateY(-1px); }
+.btn-email { background: rgba(200,169,110,0.08); border: 1px solid rgba(200,169,110,0.2); color: var(--gold-2); }
+.btn-email:hover { background: rgba(200,169,110,0.15); transform: translateY(-1px); }
 .no-phone { font-size: 12px; color: var(--muted); }
 
 /* ── ENRICH BOX ── */
@@ -1238,17 +1242,30 @@ async function hunt() {
 
     const leadsRaw = newPlaces.map(p => {
       const socialLinks = p.socialLinks || [];
+      const contactInfo = p.contactInfo || {}; // novo — vem do scrapeContacts
+
+      // Instagram — prioridade: igEnriched > contactInfo > socialLinks > website
       let instagram = socialLinks.find(s => s && s.toLowerCase().includes('instagram.com')) || '';
       let site = p.website || '';
       if (!instagram && site.toLowerCase().includes('instagram.com')) { instagram = site; site = ''; }
+      if (contactInfo.instagramUrl) instagram = contactInfo.instagramUrl;
       if (p.igEnriched?.url) instagram = p.igEnriched.url;
+
+      // Facebook — novo campo via scrapeContacts
+      const facebook = contactInfo.facebookUrl
+        || socialLinks.find(s => s && s.toLowerCase().includes('facebook.com') && !s.toLowerCase().includes('instagram')) || '';
+
+      // Email — novo campo via scrapeContacts
+      const emails = contactInfo.emails || [];
+      const email = Array.isArray(emails) ? emails[0] || '' : emails || '';
+
       return {
         nome:            p.title || 'Sem nome',
         endereco:        p.address || city,
         telefone:        p.phone  || '',
         avaliacao:       p.totalScore ? p.totalScore.toFixed(1) : null,
         totalAvaliacoes: p.reviewsCount || 0,
-        site, instagram,
+        site, instagram, facebook, email,
         igEnriched:      p.igEnriched || null,
       };
     });
@@ -1463,8 +1480,10 @@ function buildCard(l, i) {
   const phoneHtml = phone
     ? `<a href="https://wa.me/55${phone}" target="_blank" class="contact-btn btn-wa">📱 ${l.telefone}</a>`
     : `<span class="no-phone">📵 Sem telefone</span>`;
-  const siteHtml = l.site      ? `<a href="${l.site}"      target="_blank" class="contact-btn btn-site">🌐 Site</a>` : '';
-  const igHtml   = l.instagram ? `<a href="${l.instagram}" target="_blank" class="contact-btn btn-ig">📸 Instagram</a>` : '';
+  const siteHtml    = l.site     ? `<a href="${l.site}"      target="_blank" class="contact-btn btn-site">🌐 Site</a>` : '';
+  const igHtml      = l.instagram? `<a href="${l.instagram}" target="_blank" class="contact-btn btn-ig">📸 Instagram</a>` : '';
+  const fbHtml      = l.facebook ? `<a href="${l.facebook}"  target="_blank" class="contact-btn btn-fb">📘 Facebook</a>` : '';
+  const emailHtml   = l.email    ? `<a href="mailto:${l.email}" class="contact-btn btn-email" title="${l.email}">✉️ Email</a>` : '';
 
   let igBoxHtml = '';
   if (l.igEnriched) {
@@ -1511,7 +1530,7 @@ function buildCard(l, i) {
           <div class="diag-text">${l.problemas || 'Analisando...'}</div>
         </div>
         ${igBoxHtml}
-        <div class="contact-row">${phoneHtml}${siteHtml}${igHtml}</div>
+        <div class="contact-row">${phoneHtml}${siteHtml}${igHtml}${fbHtml}${emailHtml}</div>
         <button class="enrich-trigger" id="eb${i}" onclick="enrichLead(${i})">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           Validar WhatsApp
