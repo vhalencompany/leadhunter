@@ -1322,8 +1322,8 @@ function buildCard(l, i) {
         ${igBoxHtml}
         <div class="contact-row">${phoneHtml}${siteHtml}${igHtml}</div>
         <button class="enrich-trigger" id="eb${i}" onclick="enrichLead(${i})">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Enriquecer Lead — CNPJ + WhatsApp
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Validar WhatsApp
         </button>
         <div id="enrichBox${i}"></div>
         <button class="scripts-toggle" onclick="tog(this,'sc${i}')">
@@ -1348,7 +1348,7 @@ function buildCard(l, i) {
 }
 
 /* ══════════════════════════════════════════
-   ENRICH LEAD — CNPJ + WhatsApp
+   ENRICH LEAD — WhatsApp
    Chamado por card, sob demanda.
 ══════════════════════════════════════════ */
 async function enrichLead(idx) {
@@ -1362,8 +1362,14 @@ async function enrichLead(idx) {
   const box = document.getElementById(`enrichBox${idx}`);
   if (!btn || !box) return;
 
-  // Já foi enriquecido
   if (btn.classList.contains('done')) return;
+
+  if (!lead.telefone) {
+    box.innerHTML = `<div style="font-size:11px;color:var(--muted-2);padding:8px 0">Este lead não tem telefone cadastrado.</div>`;
+    btn.classList.add('done');
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Sem telefone`;
+    return;
+  }
 
   btn.disabled = true;
   btn.classList.add('loading');
@@ -1371,17 +1377,13 @@ async function enrichLead(idx) {
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite">
       <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
     </svg>
-    Consultando Receita Federal e WhatsApp...`;
+    Validando...`;
 
   try {
     const res = await fetch(window.location.origin + '/api/enrich', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nome:     lead.nome,
-        telefone: lead.telefone,
-        cidade:   lead.endereco || ''
-      })
+      body: JSON.stringify({ telefone: lead.telefone })
     });
 
     const data = await res.json();
@@ -1391,96 +1393,46 @@ async function enrichLead(idx) {
     btn.classList.add('done');
     btn.innerHTML = `
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-      Enriquecido`;
+      Validado`;
 
   } catch (e) {
     btn.disabled = false;
     btn.classList.remove('loading');
     btn.innerHTML = `
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      Enriquecer Lead — CNPJ + WhatsApp`;
-    box.innerHTML = `<div style="font-size:11px;color:var(--red);padding:8px 0">Erro ao enriquecer: ${e.message}</div>`;
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Validar WhatsApp`;
+    box.innerHTML = `<div style="font-size:11px;color:var(--red);padding:8px 0">Erro: ${e.message}</div>`;
   }
 }
 
 function buildEnrichBox(data, lead) {
-  const sections = [];
+  const wa = data.whatsapp;
+  if (!wa) return '';
 
-  // ── CNPJ ──
-  if (data.cnpj) {
-    const c = data.cnpj;
-    const situacaoClass = (c.situacao || '').toLowerCase().includes('ativa') ? 'ok'
-      : (c.situacao || '').toLowerCase().includes('baixada') ? 'alert' : 'warn';
-
-    const anosAberto = c.dataAbertura
-      ? Math.floor((Date.now() - new Date(c.dataAbertura.split('/').reverse().join('-'))) / (365.25 * 86400000))
-      : null;
-
-    sections.push(`
-    <div class="enrich-section">
-      <div class="enrich-section-label enrich-label-cnpj">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-        Receita Federal — CNPJ
-      </div>
-      <div class="enrich-grid">
-        ${c.cnpj ? `<div class="enrich-field"><div class="enrich-field-label">CNPJ</div><div class="enrich-field-value">${formatCNPJ(c.cnpj)}</div></div>` : ''}
-        ${c.situacao ? `<div class="enrich-field"><div class="enrich-field-label">Situação</div><div class="enrich-field-value ${situacaoClass}">${c.situacao}</div></div>` : ''}
-        ${c.dataAbertura ? `<div class="enrich-field"><div class="enrich-field-label">Abertura</div><div class="enrich-field-value">${c.dataAbertura}${anosAberto !== null ? ` <span style="color:var(--muted-2);font-size:10px">(${anosAberto} anos)</span>` : ''}</div></div>` : ''}
-        ${c.porte ? `<div class="enrich-field"><div class="enrich-field-label">Porte</div><div class="enrich-field-value">${c.porte}</div></div>` : ''}
-        ${c.socio ? `<div class="enrich-field" style="grid-column:1/-1"><div class="enrich-field-label">Sócio principal</div><div class="enrich-field-value">${c.socio}</div></div>` : ''}
-        ${c.atividadePrinc ? `<div class="enrich-field" style="grid-column:1/-1"><div class="enrich-field-label">Atividade principal</div><div class="enrich-field-value" style="font-size:11px;color:var(--muted-3)">${c.atividadePrinc}</div></div>` : ''}
-        ${c.capital ? `<div class="enrich-field"><div class="enrich-field-label">Capital social</div><div class="enrich-field-value">R$ ${Number(c.capital).toLocaleString('pt-BR', {minimumFractionDigits:2})}</div></div>` : ''}
-        ${c.municipio ? `<div class="enrich-field"><div class="enrich-field-label">Município</div><div class="enrich-field-value">${c.municipio}/${c.uf || ''}</div></div>` : ''}
-      </div>
-    </div>`);
+  let waHtml;
+  if (wa.erro) {
+    waHtml = `<span class="wa-status wa-unknown">— ${wa.erro}</span>`;
+  } else if (wa.ativo === true) {
+    waHtml = `
+      <span class="wa-status wa-active">✓ WhatsApp ativo</span>
+      ${wa.formatado ? `<div style="font-size:11px;color:var(--muted-2);margin-top:6px">${wa.formatado}</div>` : ''}
+      <a href="https://wa.me/${wa.numero}" target="_blank" class="contact-btn btn-wa" style="margin-top:8px;display:inline-flex">📱 Abrir conversa</a>`;
+  } else if (wa.ativo === false) {
+    waHtml = `<span class="wa-status wa-inactive">✗ WhatsApp não encontrado neste número</span>`;
   } else {
-    sections.push(`
-    <div class="enrich-section">
-      <div class="enrich-section-label enrich-label-cnpj">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-        Receita Federal — CNPJ
-      </div>
-      <div style="font-size:12px;color:var(--muted-2)">Empresa não encontrada na base da Receita Federal com esse nome.</div>
-    </div>`);
+    waHtml = `<span class="wa-status wa-unknown">— Não foi possível validar</span>`;
   }
 
-  // ── DIVIDER ──
-  if (data.whatsapp !== null) sections.push('<div class="enrich-divider"></div>');
-
-  // ── WHATSAPP ──
-  if (data.whatsapp !== null) {
-    const wa = data.whatsapp;
-    let waHtml;
-    if (wa.erro) {
-      waHtml = `<span class="wa-status wa-unknown">— ${wa.erro}</span>`;
-    } else if (wa.ativo === true) {
-      waHtml = `
-        <span class="wa-status wa-active">✓ WhatsApp ativo</span>
-        ${wa.formatado ? `<div style="font-size:11px;color:var(--muted-2);margin-top:6px">${wa.formatado}</div>` : ''}
-        ${lead.telefone ? `<a href="https://wa.me/${wa.numero}" target="_blank" class="contact-btn btn-wa" style="margin-top:8px;display:inline-flex">📱 Abrir conversa</a>` : ''}`;
-    } else if (wa.ativo === false) {
-      waHtml = `<span class="wa-status wa-inactive">✗ WhatsApp não encontrado</span>`;
-    } else {
-      waHtml = `<span class="wa-status wa-unknown">— Não foi possível validar</span>`;
-    }
-
-    sections.push(`
+  return `
+  <div class="enrich-box">
     <div class="enrich-section">
       <div class="enrich-section-label enrich-label-wa">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         Validação WhatsApp
       </div>
       ${waHtml}
-    </div>`);
-  }
-
-  return `<div class="enrich-box">${sections.join('')}</div>`;
-}
-
-function formatCNPJ(cnpj) {
-  const d = (cnpj || '').replace(/\D/g, '');
-  if (d.length !== 14) return cnpj;
-  return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-${d.slice(12)}`;
+    </div>
+  </div>`;
 }
 
 function tog(btn, id) {
