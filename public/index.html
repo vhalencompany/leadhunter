@@ -567,6 +567,141 @@ header {
 .btn-csv:hover { border-color: rgba(200,169,110,0.4); color: var(--gold); background: var(--gold-dim); }
 .btn-csv.done { border-color: rgba(74,222,128,0.4); color: var(--green); background: rgba(74,222,128,0.06); }
 
+/* ══════════════════════════════════════════
+   TELA DE PIPELINE
+══════════════════════════════════════════ */
+.nav-tabs {
+  display: flex; gap: 8px;
+}
+.nav-tab {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 16px; border-radius: 100px;
+  font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+  border: 1px solid var(--dark-5); background: transparent; color: var(--muted-2);
+  transition: all 0.2s;
+}
+.nav-tab:hover { border-color: rgba(200,169,110,0.3); color: var(--gold); }
+.nav-tab.active { border-color: var(--gold); color: var(--gold-2); background: var(--gold-dim); }
+.nav-tab .nav-count {
+  background: var(--dark-5); border-radius: 100px; padding: 1px 6px;
+  font-size: 9px; font-weight: 700; color: var(--muted-3); min-width: 18px; text-align: center;
+}
+.nav-tab.active .nav-count { background: rgba(200,169,110,0.2); color: var(--gold); }
+
+/* Tela principal e pipeline */
+#screenSearch  { display: block; }
+#screenPipeline { display: none; }
+#screenPipeline.active { display: block; }
+#screenSearch.hidden { display: none; }
+
+.pipeline-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px; padding-bottom: 20px;
+  border-bottom: 1px solid var(--dark-4);
+}
+.pipeline-header-title {
+  font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700;
+  letter-spacing: -0.01em; color: var(--light);
+}
+.pipeline-header-sub { font-size: 12px; color: var(--muted-2); margin-top: 4px; }
+
+.pipeline-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 28px;
+}
+.pipeline-stat-card {
+  background: var(--dark-2); border: 1px solid var(--dark-4);
+  border-radius: 14px; padding: 16px 18px; text-align: center;
+  position: relative; overflow: hidden;
+}
+.pipeline-stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.pipeline-stat-card.ps-pending::before  { background: var(--muted); }
+.pipeline-stat-card.ps-reached::before  { background: var(--gold); }
+.pipeline-stat-card.ps-replied::before  { background: var(--orange); }
+.pipeline-stat-card.ps-closed::before   { background: var(--green); }
+.pipeline-stat-num {
+  font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; line-height: 1;
+  margin-bottom: 6px;
+}
+.ps-pending .pipeline-stat-num  { color: var(--muted-3); }
+.ps-reached .pipeline-stat-num  { color: var(--gold); }
+.ps-replied .pipeline-stat-num  { color: var(--orange); }
+.ps-closed .pipeline-stat-num   { color: var(--green); }
+.pipeline-stat-label {
+  font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600;
+  letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted-2);
+}
+
+.pipeline-filter-bar {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.pipeline-filter {
+  padding: 6px 14px; border-radius: 100px; font-size: 11px; font-weight: 600;
+  font-family: 'Space Grotesk', sans-serif; letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid var(--dark-5); background: transparent; color: var(--muted-2);
+  cursor: pointer; transition: all 0.2s;
+}
+.pipeline-filter:hover { border-color: rgba(200,169,110,0.3); color: var(--gold); }
+.pipeline-filter.active { border-color: var(--gold); color: var(--gold-2); background: var(--gold-dim); }
+
+.pipeline-empty {
+  text-align: center; padding: 60px 24px; color: var(--muted-2); font-size: 13px;
+}
+.pipeline-empty-icon { font-size: 40px; margin-bottom: 16px; opacity: 0.4; }
+
+.pl-card {
+  background: var(--dark-2); border: 1px solid var(--dark-4);
+  border-radius: 14px; margin-bottom: 10px; overflow: hidden;
+  transition: border-color 0.2s; animation: riseUp 0.4s cubic-bezier(0.22,1,0.36,1) both;
+}
+.pl-card:hover { border-color: rgba(200,169,110,0.25); }
+.pl-card.s-reached { border-left: 3px solid var(--gold); }
+.pl-card.s-replied  { border-left: 3px solid var(--orange); }
+.pl-card.s-closed   { border-left: 3px solid var(--green); }
+
+.pl-card-inner {
+  display: flex; align-items: center; gap: 16px; padding: 16px 18px;
+}
+.pl-status-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.pl-dot-pending { background: var(--muted); }
+.pl-dot-reached { background: var(--gold); box-shadow: 0 0 8px rgba(200,169,110,0.4); }
+.pl-dot-replied  { background: var(--orange); box-shadow: 0 0 8px rgba(232,112,58,0.4); }
+.pl-dot-closed   { background: var(--green); box-shadow: 0 0 8px rgba(74,222,128,0.4); }
+
+.pl-info { flex: 1; min-width: 0; }
+.pl-name {
+  font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700;
+  color: var(--light); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pl-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.pl-meta-item { font-size: 11px; color: var(--muted-2); display: flex; align-items: center; gap: 4px; }
+.pl-diag {
+  font-size: 11px; color: var(--muted-3); margin-top: 6px; line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+.pl-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.pl-status-select {
+  background: var(--dark-3); border: 1px solid var(--dark-5); border-radius: 8px;
+  padding: 6px 10px; color: var(--light); font-family: 'Space Grotesk', sans-serif;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em; cursor: pointer;
+  transition: border-color 0.2s; outline: none;
+}
+.pl-status-select:focus { border-color: rgba(200,169,110,0.4); }
+
+.pl-wa {
+  display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px;
+  background: rgba(37,211,102,0.08); border: 1px solid rgba(37,211,102,0.2);
+  border-radius: 8px; font-size: 11px; font-weight: 600; color: #4ADE80;
+  text-decoration: none; transition: all 0.2s; white-space: nowrap;
+}
+.pl-wa:hover { background: rgba(37,211,102,0.15); }
+.pl-date { font-size: 10px; color: var(--muted-2); font-family: 'Space Grotesk', sans-serif; }
+
 .empty { display: none; text-align: center; padding: 80px 24px; color: var(--muted-2); font-size: 14px; }
 .empty.show { display: block; }
 
@@ -586,12 +721,20 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
       <div class="logo-sub">Lead Hunter</div>
     </div>
   </div>
-  <div class="badge-live">
-    <div class="dot"></div>
-    B2B Intelligence
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tabSearch" onclick="switchScreen('search')">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Buscar
+    </button>
+    <button class="nav-tab" id="tabPipeline" onclick="switchScreen('pipeline')">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Pipeline
+      <span class="nav-count" id="pipelineNavCount">0</span>
+    </button>
   </div>
 </header>
 
+<div id="screenSearch">
 <div class="wrap">
   <div class="hero">
     <div class="hero-eyebrow">
@@ -746,6 +889,46 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
   </div>
 
   <div id="list"></div>
+</div><!-- /wrap -->
+</div><!-- /screenSearch -->
+
+<!-- ══ TELA PIPELINE ══ -->
+<div id="screenPipeline" class="wrap" style="padding-top:32px">
+  <div class="pipeline-header">
+    <div>
+      <div class="pipeline-header-title">Pipeline de Prospecção</div>
+      <div class="pipeline-header-sub">Todos os leads abordados, salvos permanentemente</div>
+    </div>
+  </div>
+
+  <div class="pipeline-stats">
+    <div class="pipeline-stat-card ps-pending">
+      <div class="pipeline-stat-num" id="plStatPending">0</div>
+      <div class="pipeline-stat-label">Pendentes</div>
+    </div>
+    <div class="pipeline-stat-card ps-reached">
+      <div class="pipeline-stat-num" id="plStatReached">0</div>
+      <div class="pipeline-stat-label">Abordados</div>
+    </div>
+    <div class="pipeline-stat-card ps-replied">
+      <div class="pipeline-stat-num" id="plStatReplied">0</div>
+      <div class="pipeline-stat-label">Responderam</div>
+    </div>
+    <div class="pipeline-stat-card ps-closed">
+      <div class="pipeline-stat-num" id="plStatClosed">0</div>
+      <div class="pipeline-stat-label">Fechados</div>
+    </div>
+  </div>
+
+  <div class="pipeline-filter-bar">
+    <button class="pipeline-filter active" onclick="applyPipelineFilter(this,'all')">Todos</button>
+    <button class="pipeline-filter" onclick="applyPipelineFilter(this,'reached')">📤 Abordados</button>
+    <button class="pipeline-filter" onclick="applyPipelineFilter(this,'replied')">💬 Responderam</button>
+    <button class="pipeline-filter" onclick="applyPipelineFilter(this,'closed')">✅ Fechados</button>
+    <button class="pipeline-filter" onclick="applyPipelineFilter(this,'pending')">⬜ Pendentes</button>
+  </div>
+
+  <div id="pipelineList"></div>
 </div>
 
 <footer>Vhalen Company © 2025 — Uso Restrito</footer>
@@ -919,12 +1102,205 @@ function updateDedupBadge() {
 
 // Atualiza badge ao carregar
 updateDedupBadge();
+updatePipelineNavCount();
 
 /* ══════════════════════════════════════════
-   PIPELINE DE ABORDAGEM
-   4 estados: pending → reached → replied → closed
-   Salvo permanentemente no localStorage por nome do lead.
+   NAVEGAÇÃO ENTRE TELAS
 ══════════════════════════════════════════ */
+function switchScreen(screen) {
+  const searchEl   = document.getElementById('screenSearch');
+  const pipelineEl = document.getElementById('screenPipeline');
+  const tabSearch  = document.getElementById('tabSearch');
+  const tabPipeline = document.getElementById('tabPipeline');
+
+  if (screen === 'pipeline') {
+    searchEl.classList.add('hidden');
+    pipelineEl.classList.add('active');
+    tabSearch.classList.remove('active');
+    tabPipeline.classList.add('active');
+    renderPipelineScreen();
+  } else {
+    searchEl.classList.remove('hidden');
+    pipelineEl.classList.remove('active');
+    tabSearch.classList.add('active');
+    tabPipeline.classList.remove('active');
+  }
+}
+
+/* ══════════════════════════════════════════
+   TELA DE PIPELINE — renderização
+══════════════════════════════════════════ */
+let activePipelineFilter = 'all';
+
+function applyPipelineFilter(btn, filter) {
+  document.querySelectorAll('.pipeline-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activePipelineFilter = filter;
+  renderPipelineScreen();
+}
+
+function renderPipelineScreen() {
+  const pipeline = getPipeline();
+  const allKeys  = Object.keys(pipeline);
+
+  // Conta por status
+  const counts = { pending: 0, reached: 0, replied: 0, closed: 0 };
+  allKeys.forEach(k => {
+    const s = pipeline[k]?.status || 'pending';
+    counts[s] = (counts[s] || 0) + 1;
+  });
+
+  document.getElementById('plStatPending').textContent = counts.pending;
+  document.getElementById('plStatReached').textContent = counts.reached;
+  document.getElementById('plStatReplied').textContent = counts.replied;
+  document.getElementById('plStatClosed').textContent  = counts.closed;
+
+  // Atualiza badge no nav
+  const total = counts.reached + counts.replied + counts.closed;
+  document.getElementById('pipelineNavCount').textContent = total;
+
+  // Filtra leads do pipeline
+  const leadsFromPipeline = allKeys
+    .filter(k => {
+      const s = pipeline[k]?.status || 'pending';
+      if (activePipelineFilter === 'all') return s !== 'pending';
+      return s === activePipelineFilter;
+    })
+    .map(k => {
+      const stored = pipeline[k];
+      // Tenta encontrar dados completos do lead em allLeads
+      const full = allLeads.find(l => getLeadKey(l) === k) || null;
+      return {
+        key:      k,
+        nome:     full?.nome     || stored.nome     || k.replace(/_/g, ' '),
+        telefone: full?.telefone || stored.telefone || '',
+        endereco: full?.endereco || stored.endereco || '',
+        facebook: full?.facebook || stored.facebook || '',
+        email:    full?.email    || stored.email    || '',
+        problemas:full?.problemas|| stored.problemas|| '',
+        status:   stored.status  || 'pending',
+        date:     stored.date    || '',
+        score:    full ? calcScore(full).score : 0,
+      };
+    })
+    .sort((a, b) => {
+      // Ordena por status (closed > replied > reached > pending) depois por score
+      const order = { closed: 3, replied: 2, reached: 1, pending: 0 };
+      if (order[b.status] !== order[a.status]) return order[b.status] - order[a.status];
+      return b.score - a.score;
+    });
+
+  const list = document.getElementById('pipelineList');
+
+  if (leadsFromPipeline.length === 0) {
+    const msg = activePipelineFilter === 'all'
+      ? 'Nenhum lead abordado ainda. Comece a prospectar e marque os status nos cards.'
+      : 'Nenhum lead nesta categoria ainda.';
+    list.innerHTML = `<div class="pipeline-empty"><div class="pipeline-empty-icon">📋</div>${msg}</div>`;
+    return;
+  }
+
+  list.innerHTML = leadsFromPipeline.map((lead, idx) => {
+    const phone = (lead.telefone || '').replace(/\D/g, '');
+    const waBtn = phone
+      ? `<a href="https://wa.me/55${phone}" target="_blank" class="pl-wa">📱 WhatsApp</a>`
+      : '';
+    const fbBtn = lead.facebook
+      ? `<a href="${lead.facebook}" target="_blank" class="pl-wa" style="background:rgba(24,119,242,0.08);border-color:rgba(24,119,242,0.2);color:#1877F2">📘 Facebook</a>`
+      : '';
+    const emailBtn = lead.email
+      ? `<a href="mailto:${lead.email}" class="pl-wa" style="background:rgba(200,169,110,0.08);border-color:rgba(200,169,110,0.2);color:var(--gold-2)">✉️ Email</a>`
+      : '';
+
+    const statusLabels = {
+      pending: '⬜ Pendente',
+      reached: '📤 Abordado',
+      replied: '💬 Respondeu',
+      closed:  '✅ Fechado',
+    };
+
+    const dotClass = `pl-dot-${lead.status}`;
+
+    return `
+    <div class="pl-card s-${lead.status}" id="plcard-${idx}">
+      <div class="pl-card-inner">
+        <div class="pl-status-dot ${dotClass}"></div>
+        <div class="pl-info">
+          <div class="pl-name">${lead.nome}</div>
+          <div class="pl-meta">
+            ${lead.endereco ? `<span class="pl-meta-item">📍 ${lead.endereco}</span>` : ''}
+            ${lead.date ? `<span class="pl-meta-item pl-date">· ${lead.date}</span>` : ''}
+            ${lead.score ? `<span class="pl-meta-item" style="color:var(--gold);font-weight:600">${lead.score} pts</span>` : ''}
+          </div>
+          ${lead.problemas ? `<div class="pl-diag">${lead.problemas}</div>` : ''}
+          <div class="pl-meta" style="margin-top:8px;gap:6px">
+            ${waBtn}${fbBtn}${emailBtn}
+          </div>
+        </div>
+        <div class="pl-actions">
+          <select class="pl-status-select" onchange="updatePipelineStatus('${lead.key}', this.value, ${idx})">
+            <option value="pending"  ${lead.status==='pending' ?'selected':''}>⬜ Pendente</option>
+            <option value="reached"  ${lead.status==='reached' ?'selected':''}>📤 Abordado</option>
+            <option value="replied"  ${lead.status==='replied' ?'selected':''}>💬 Respondeu</option>
+            <option value="closed"   ${lead.status==='closed'  ?'selected':''}>✅ Fechado</option>
+          </select>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updatePipelineStatus(key, newStatus, idx) {
+  const pipeline = getPipeline();
+  pipeline[key] = {
+    ...pipeline[key],
+    status: newStatus,
+    date: new Date().toLocaleDateString('pt-BR')
+  };
+  savePipeline(pipeline);
+
+  // Atualiza visual do card no pipeline
+  const card = document.getElementById(`plcard-${idx}`);
+  if (card) {
+    card.className = `pl-card s-${newStatus}`;
+    const dot = card.querySelector('.pl-status-dot');
+    if (dot) dot.className = `pl-status-dot pl-dot-${newStatus}`;
+  }
+
+  // Re-renderiza stats
+  renderPipelineScreen();
+
+  // Atualiza também na tela de busca se o lead estiver visível
+  updatePipelinePanel();
+}
+
+function updatePipelineNavCount() {
+  const pipeline = getPipeline();
+  const total = Object.values(pipeline).filter(v => v.status !== 'pending').length;
+  const el = document.getElementById('pipelineNavCount');
+  if (el) el.textContent = total;
+}
+
+// Salva dados extras do lead no pipeline quando o status muda
+const _origSetLeadStatus = setLeadStatus;
+function setLeadStatus(lead, status) {
+  const pipeline = getPipeline();
+  const key = getLeadKey(lead);
+  pipeline[key] = {
+    status,
+    date:     new Date().toLocaleDateString('pt-BR'),
+    nome:     lead.nome     || '',
+    telefone: lead.telefone || '',
+    endereco: lead.endereco || '',
+    facebook: lead.facebook || '',
+    email:    lead.email    || '',
+    problemas:lead.problemas|| '',
+  };
+  savePipeline(pipeline);
+  updatePipelineNavCount();
+}
+
+/* ── FILTROS ── */
 const PIPELINE_KEY = 'vhalen_pipeline';
 
 function getPipeline() {
