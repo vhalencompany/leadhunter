@@ -518,6 +518,8 @@ header {
 .script-lbl { font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
 .script-lbl.ig { color: #C13584; }
 .script-lbl.wa { color: #25D366; }
+.script-lbl.fu3 { color: var(--orange); }
+.script-lbl.fu7 { color: var(--red); }
 
 .script-txt { background: var(--dark-3); border: 1px solid var(--dark-5); border-radius: 10px; padding: 14px 16px; font-size: 13px; line-height: 1.7; color: var(--light); white-space: pre-wrap; cursor: pointer; transition: all 0.2s; font-family: 'Outfit', sans-serif; }
 .script-txt:hover { border-color: rgba(200,169,110,0.3); background: rgba(200,169,110,0.03); }
@@ -805,10 +807,10 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
 
     <div style="margin-bottom:0">
       <div class="field-label">
-        Sua Oferta
+        Seu Produto
         <span class="field-optional">opcional</span>
       </div>
-      <input type="text" id="offerInput" class="input" style="margin-bottom:0" placeholder="Ex: criação de sites e landing pages, gestão de tráfego...">
+      <input type="text" id="offerInput" class="input" style="margin-bottom:0" placeholder="Ex: landing page, gestão de Instagram, tráfego pago, automação com IA...">
     </div>
 
     <!-- ── DEDUP BADGE ── -->
@@ -1171,16 +1173,20 @@ function renderPipelineScreen() {
       // Tenta encontrar dados completos do lead em allLeads
       const full = allLeads.find(l => getLeadKey(l) === k) || null;
       return {
-        key:      k,
-        nome:     full?.nome     || stored.nome     || k.replace(/_/g, ' '),
-        telefone: full?.telefone || stored.telefone || '',
-        endereco: full?.endereco || stored.endereco || '',
-        facebook: full?.facebook || stored.facebook || '',
-        email:    full?.email    || stored.email    || '',
-        problemas:full?.problemas|| stored.problemas|| '',
-        status:   stored.status  || 'pending',
-        date:     stored.date    || '',
-        score:    full ? calcScore(full).score : 0,
+        key:       k,
+        nome:      full?.nome      || stored.nome      || k.replace(/_/g, ' '),
+        telefone:  full?.telefone  || stored.telefone  || '',
+        endereco:  full?.endereco  || stored.endereco  || '',
+        facebook:  full?.facebook  || stored.facebook  || '',
+        email:     full?.email     || stored.email     || '',
+        problemas: full?.problemas || stored.problemas || '',
+        comentario:full?.comentario|| stored.comentario|| '',
+        dm:        full?.dm        || stored.dm        || '',
+        followup3: full?.followup3 || stored.followup3 || '',
+        followup7: full?.followup7 || stored.followup7 || '',
+        status:    stored.status   || 'pending',
+        date:      stored.date     || '',
+        score:     full ? calcScore(full).score : 0,
       };
     })
     .sort((a, b) => {
@@ -1212,14 +1218,43 @@ function renderPipelineScreen() {
       ? `<a href="mailto:${lead.email}" class="pl-wa" style="background:rgba(200,169,110,0.08);border-color:rgba(200,169,110,0.2);color:var(--gold-2)">✉️ Email</a>`
       : '';
 
-    const statusLabels = {
-      pending: '⬜ Pendente',
-      reached: '📤 Abordado',
-      replied: '💬 Respondeu',
-      closed:  '✅ Fechado',
-    };
-
     const dotClass = `pl-dot-${lead.status}`;
+
+    // Scripts disponíveis
+    const hasScripts = lead.dm || lead.followup3 || lead.followup7 || lead.comentario;
+    const scriptsHtml = hasScripts ? `
+    <div class="pl-scripts" id="plsc-${idx}" style="display:none;padding:12px 18px 16px;border-top:1px solid var(--dark-5)">
+      ${lead.comentario ? `
+      <div class="script-block">
+        <div class="script-lbl ig" style="font-size:8px">📸 Comentário Instagram</div>
+        <div class="script-txt" style="font-size:12px" onclick="cpText(this,'plct-${idx}a')">${lead.comentario}</div>
+        <div class="copy-tag" id="plct-${idx}a">toque para copiar</div>
+      </div>` : ''}
+      ${lead.dm ? `
+      <div class="script-block">
+        <div class="script-lbl wa" style="font-size:8px">💬 DM Dia 1 — Abertura</div>
+        <div class="script-txt" style="font-size:12px" onclick="cpText(this,'plct-${idx}b')">${lead.dm}</div>
+        <div class="copy-tag" id="plct-${idx}b">toque para copiar</div>
+      </div>` : ''}
+      ${lead.followup3 ? `
+      <div class="script-block">
+        <div class="script-lbl fu3" style="font-size:8px">📤 DM Dia 3 — Revelação</div>
+        <div class="script-txt" style="font-size:12px" onclick="cpText(this,'plct-${idx}c')">${lead.followup3}</div>
+        <div class="copy-tag" id="plct-${idx}c">toque para copiar</div>
+      </div>` : ''}
+      ${lead.followup7 ? `
+      <div class="script-block">
+        <div class="script-lbl fu7" style="font-size:8px">🔴 DM Dia 7 — Última Tentativa</div>
+        <div class="script-txt" style="font-size:12px" onclick="cpText(this,'plct-${idx}d')">${lead.followup7}</div>
+        <div class="copy-tag" id="plct-${idx}d">toque para copiar</div>
+      </div>` : ''}
+    </div>` : '';
+
+    const expandBtn = hasScripts
+      ? `<button class="scripts-toggle" style="margin:0 18px 12px;width:calc(100% - 36px)" onclick="togPl(this,'plsc-${idx}')">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Ver Abordagens
+        </button>` : '';
 
     return `
     <div class="pl-card s-${lead.status}" id="plcard-${idx}">
@@ -1246,6 +1281,8 @@ function renderPipelineScreen() {
           </select>
         </div>
       </div>
+      ${expandBtn}
+      ${scriptsHtml}
     </div>`;
   }).join('');
 }
@@ -1288,13 +1325,17 @@ function setLeadStatus(lead, status) {
   const key = getLeadKey(lead);
   pipeline[key] = {
     status,
-    date:     new Date().toLocaleDateString('pt-BR'),
-    nome:     lead.nome     || '',
-    telefone: lead.telefone || '',
-    endereco: lead.endereco || '',
-    facebook: lead.facebook || '',
-    email:    lead.email    || '',
-    problemas:lead.problemas|| '',
+    date:      new Date().toLocaleDateString('pt-BR'),
+    nome:      lead.nome      || '',
+    telefone:  lead.telefone  || '',
+    endereco:  lead.endereco  || '',
+    facebook:  lead.facebook  || '',
+    email:     lead.email     || '',
+    problemas: lead.problemas || '',
+    comentario:lead.comentario|| '',
+    dm:        lead.dm        || '',
+    followup3: lead.followup3 || '',
+    followup7: lead.followup7 || '',
   };
   savePipeline(pipeline);
   updatePipelineNavCount();
@@ -1923,10 +1964,22 @@ function buildCard(l, i) {
             <div class="copy-tag" id="ct${i}a">toque para copiar</div>
           </div>
           <div class="script-block">
-            <div class="script-lbl wa">💬 DM — WhatsApp</div>
+            <div class="script-lbl wa">💬 DM Dia 1 — Abertura</div>
             <div class="script-txt" onclick="cp(this,'ct${i}b')">${l.dm || '—'}</div>
             <div class="copy-tag" id="ct${i}b">toque para copiar</div>
           </div>
+          ${l.followup3 ? `
+          <div class="script-block">
+            <div class="script-lbl fu3">📤 DM Dia 3 — Revelação do Produto</div>
+            <div class="script-txt" onclick="cp(this,'ct${i}c')">${l.followup3}</div>
+            <div class="copy-tag" id="ct${i}c">toque para copiar</div>
+          </div>` : ''}
+          ${l.followup7 ? `
+          <div class="script-block">
+            <div class="script-lbl fu7">🔴 DM Dia 7 — Última Tentativa</div>
+            <div class="script-txt" onclick="cp(this,'ct${i}d')">${l.followup7}</div>
+            <div class="copy-tag" id="ct${i}d">toque para copiar</div>
+          </div>` : ''}
         </div>
       </div>
     </div>
@@ -2019,6 +2072,26 @@ function buildEnrichBox(data, lead) {
       ${waHtml}
     </div>
   </div>`;
+}
+
+function togPl(btn, id) {
+  const s = document.getElementById(id);
+  if (!s) return;
+  const isOpen = s.style.display !== 'none';
+  s.style.display = isOpen ? 'none' : 'block';
+  btn.innerHTML = isOpen
+    ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Ver Abordagens'
+    : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg> Ocultar';
+}
+
+function cpText(el, hintId) {
+  navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+    const h = document.getElementById(hintId);
+    if (!h) return;
+    h.textContent = '✓ copiado';
+    h.classList.add('done');
+    setTimeout(() => { h.textContent = 'toque para copiar'; h.classList.remove('done'); }, 2200);
+  }).catch(() => {});
 }
 
 function tog(btn, id) {
