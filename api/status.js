@@ -133,30 +133,55 @@ export default async function handler(req, res) {
       if (igUsername) {
         const profile = profileByUsername[igUsername] || {};
         const posts = postsByUsername[igUsername] || [];
+
+        // ── FIX: detecta post fixado ──────────────────────────────────────
+        // Se o primeiro post tem mais de 30 dias MAS existe algum post mais
+        // recente nos seguintes, o primeiro provavelmente é post fixado.
+        // Usa o post não-fixado mais recente para calcular daysSinceLastPost.
+        let postsParaAnalise = [...posts];
+        let postReferencia = posts[0] || null;
+
+        if (posts.length > 1) {
+          const primeiroTs = new Date(posts[0]?.timestamp ?? posts[0]?.takenAt ?? 0).getTime();
+          const segundoTs  = new Date(posts[1]?.timestamp ?? posts[1]?.takenAt ?? 0).getTime();
+          const diasPrimeiro = Math.floor((Date.now() - primeiroTs) / 86400000);
+          const diasSegundo  = Math.floor((Date.now() - segundoTs)  / 86400000);
+
+          // Se o primeiro tem >30 dias e o segundo é significativamente mais
+          // recente (diferença >14 dias), considera o primeiro como fixado
+          if (diasPrimeiro > 30 && (diasPrimeiro - diasSegundo) > 14) {
+            postReferencia = posts[1];
+            postsParaAnalise = posts.slice(1); // ignora fixado para médias
+          }
+        }
+
+        const diasUltimoPost = postReferencia
+          ? Math.floor((Date.now() - new Date(postReferencia.timestamp ?? postReferencia.takenAt)) / 86400000)
+          : null;
+
         enriched.igEnriched = {
-          username: igUsername,
-          url: `https://www.instagram.com/${igUsername}/`,
-          followers: profile.followersCount ?? profile.followers ?? 0,
-          following: profile.followsCount ?? 0,
-          postsCount: profile.postsCount ?? profile.mediaCount ?? 0,
-          bio: profile.biography ?? '',
-          site: profile.externalUrl ?? profile.websiteUrl ?? '',
-          isBusinessAccount: profile.isBusinessAccount ?? null,
+          username:         igUsername,
+          url:              `https://www.instagram.com/${igUsername}/`,
+          followers:        profile.followersCount ?? profile.followers ?? 0,
+          following:        profile.followsCount ?? 0,
+          postsCount:       profile.postsCount ?? profile.mediaCount ?? 0,
+          bio:              profile.biography ?? '',
+          site:             profile.externalUrl ?? profile.websiteUrl ?? '',
+          isBusinessAccount:profile.isBusinessAccount ?? null,
           businessCategory: profile.businessCategoryName ?? '',
-          verified: profile.verified ?? false,
+          verified:         profile.verified ?? false,
           recentPosts: posts.slice(0, 6).map(p => ({
-            caption: (p.caption || p.text || '').slice(0, 200),
-            likes: p.likesCount ?? p.likes ?? 0,
-            comments: p.commentsCount ?? p.comments ?? 0,
+            caption:   (p.caption || p.text || '').slice(0, 200),
+            likes:     p.likesCount ?? p.likes ?? 0,
+            comments:  p.commentsCount ?? p.comments ?? 0,
             timestamp: p.timestamp ?? p.takenAt ?? null,
-            hashtags: p.hashtags ?? [],
+            hashtags:  p.hashtags ?? [],
+            isPinned:  p === posts[0] && postReferencia === posts[1], // marca se fixado
           })),
-          avgLikes: calcAvg(posts, 'likesCount') || calcAvg(posts, 'likes'),
-          avgComments: calcAvg(posts, 'commentsCount') || calcAvg(posts, 'comments'),
-          lastPostDate: posts[0]?.timestamp ?? posts[0]?.takenAt ?? null,
-          daysSinceLastPost: posts[0]
-            ? Math.floor((Date.now() - new Date(posts[0].timestamp ?? posts[0].takenAt)) / 86400000)
-            : null,
+          avgLikes:         calcAvg(postsParaAnalise, 'likesCount') || calcAvg(postsParaAnalise, 'likes'),
+          avgComments:      calcAvg(postsParaAnalise, 'commentsCount') || calcAvg(postsParaAnalise, 'comments'),
+          lastPostDate:     postReferencia?.timestamp ?? postReferencia?.takenAt ?? null,
+          daysSinceLastPost: diasUltimoPost,
         };
       }
       return enriched;
