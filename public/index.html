@@ -533,6 +533,106 @@ header {
 
 .audit-divider { height: 1px; background: var(--dark-5); margin: 10px 0; }
 
+#screenMetrics { display: none; }
+#screenMetrics.active { display: block; }
+
+.metrics-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px;
+}
+@media (min-width: 600px) { .metrics-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.metric-card {
+  background: var(--dark-2); border: 1px solid var(--dark-4);
+  border-radius: 14px; padding: 18px 16px; position: relative; overflow: hidden;
+}
+.metric-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.metric-card.mc-gold::before   { background: var(--gold); }
+.metric-card.mc-orange::before { background: var(--orange); }
+.metric-card.mc-green::before  { background: var(--green); }
+.metric-card.mc-blue::before   { background: var(--review); }
+.metric-card.mc-red::before    { background: var(--red); }
+.metric-card.mc-purple::before { background: #A855F7; }
+
+.metric-value {
+  font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700;
+  line-height: 1; margin-bottom: 6px; color: var(--light);
+}
+.metric-label {
+  font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600;
+  letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted-2); margin-bottom: 4px;
+}
+.metric-sub { font-size: 10px; color: var(--muted-2); margin-top: 6px; }
+.metric-trend {
+  font-size: 10px; font-weight: 600; font-family: 'Space Grotesk', sans-serif;
+  display: inline-flex; align-items: center; gap: 3px; margin-top: 4px;
+}
+.trend-up   { color: var(--green); }
+.trend-down { color: var(--red); }
+.trend-flat { color: var(--muted-2); }
+
+.metrics-section-title {
+  font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold);
+  margin: 24px 0 14px; display: flex; align-items: center; gap: 8px;
+}
+.metrics-section-title::after { content: ''; flex: 1; height: 1px; background: var(--dark-5); }
+
+.metrics-bar-wrap { margin-bottom: 12px; }
+.metrics-bar-label {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 6px; font-size: 12px; color: var(--light);
+}
+.metrics-bar-label span { font-size: 11px; color: var(--muted-2); font-family: 'Space Grotesk', sans-serif; }
+.metrics-bar-track {
+  height: 6px; background: var(--dark-5); border-radius: 3px; overflow: hidden;
+}
+.metrics-bar-fill {
+  height: 100%; border-radius: 3px; transition: width 0.8s cubic-bezier(0.22,1,0.36,1);
+}
+
+.metrics-table {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+}
+.metrics-table th {
+  font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-2);
+  padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--dark-5);
+}
+.metrics-table td {
+  padding: 10px 12px; border-bottom: 1px solid var(--dark-4); color: var(--light);
+  vertical-align: middle;
+}
+.metrics-table tr:last-child td { border-bottom: none; }
+.metrics-table tr:hover td { background: rgba(200,169,110,0.03); }
+
+.metrics-empty {
+  text-align: center; padding: 40px 24px; color: var(--muted-2); font-size: 12px;
+  background: var(--dark-2); border: 1px solid var(--dark-4); border-radius: 14px;
+}
+
+.funnel-wrap {
+  background: var(--dark-2); border: 1px solid var(--dark-4);
+  border-radius: 14px; padding: 20px; margin-bottom: 16px;
+}
+.funnel-step {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 10px;
+}
+.funnel-step:last-child { margin-bottom: 0; }
+.funnel-label {
+  font-size: 12px; color: var(--light); min-width: 100px;
+  font-family: 'Space Grotesk', sans-serif; font-weight: 500;
+}
+.funnel-bar-wrap { flex: 1; }
+.funnel-count {
+  font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;
+  min-width: 36px; text-align: right;
+}
+.funnel-pct { font-size: 10px; color: var(--muted-2); min-width: 40px; text-align: right; }
+
+.pipeline-panel { display: none !important; }
+
 .enrich-trigger {
   width: 100%; background: transparent;
   border: 1px dashed var(--dark-6); border-radius: 8px;
@@ -808,6 +908,10 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
       Pipeline
       <span class="nav-count" id="pipelineNavCount">0</span>
     </button>
+    <button class="nav-tab" id="tabMetrics" onclick="switchScreen('metrics')">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Métricas
+    </button>
   </div>
 </header>
 
@@ -1002,6 +1106,21 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
   <div id="pipelineList"></div>
 </div>
 
+<!-- ══ TELA MÉTRICAS ══ -->
+<div id="screenMetrics" class="wrap" style="padding-top:32px">
+  <div class="pipeline-header">
+    <div>
+      <div class="pipeline-header-title">Métricas de Prospecção</div>
+      <div class="pipeline-header-sub">Baseado no seu histórico salvo localmente</div>
+    </div>
+    <button class="btn-csv" onclick="exportMetricsCSV()" style="flex-shrink:0">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar
+    </button>
+  </div>
+  <div id="metricsContent"></div>
+</div>
+
 <footer>Vhalen Company © 2025 — Uso Restrito</footer>
 
 <script>
@@ -1181,22 +1300,238 @@ updatePipelineNavCount();
 function switchScreen(screen) {
   const searchEl   = document.getElementById('screenSearch');
   const pipelineEl = document.getElementById('screenPipeline');
+  const metricsEl  = document.getElementById('screenMetrics');
   const tabSearch  = document.getElementById('tabSearch');
-  const tabPipeline = document.getElementById('tabPipeline');
+  const tabPipeline= document.getElementById('tabPipeline');
+  const tabMetrics = document.getElementById('tabMetrics');
+
+  // Reset
+  [searchEl, pipelineEl, metricsEl].forEach(el => { el?.classList.remove('active'); el?.classList.add('hidden'); });
+  searchEl?.classList.remove('hidden');
+  [tabSearch, tabPipeline, tabMetrics].forEach(t => t?.classList.remove('active'));
 
   if (screen === 'pipeline') {
     searchEl.classList.add('hidden');
-    pipelineEl.classList.add('active');
-    tabSearch.classList.remove('active');
+    pipelineEl.classList.remove('hidden'); pipelineEl.classList.add('active');
     tabPipeline.classList.add('active');
     renderPipelineScreen();
+  } else if (screen === 'metrics') {
+    searchEl.classList.add('hidden');
+    metricsEl.classList.remove('hidden'); metricsEl.classList.add('active');
+    tabMetrics.classList.add('active');
+    renderMetrics();
   } else {
     searchEl.classList.remove('hidden');
-    pipelineEl.classList.remove('active');
     tabSearch.classList.add('active');
-    tabPipeline.classList.remove('active');
   }
 }
+
+/* ══════════════════════════════════════════
+   MÉTRICAS
+══════════════════════════════════════════ */
+function getMetricsData() {
+  const pipeline = getPipeline();
+  const allKeys  = Object.keys(pipeline);
+  const leads    = allKeys.map(k => pipeline[k]);
+
+  const total    = leads.length;
+  const pending  = leads.filter(l => l.status === 'pending').length;
+  const reached  = leads.filter(l => l.status === 'reached').length;
+  const replied  = leads.filter(l => l.status === 'replied').length;
+  const closed   = leads.filter(l => l.status === 'closed').length;
+
+  const abordados = reached + replied + closed;
+  const taxaResposta  = abordados > 0 ? Math.round((replied + closed) / abordados * 100) : 0;
+  const taxaFechamento= (replied + closed) > 0 ? Math.round(closed / (replied + closed) * 100) : 0;
+  const taxaConversao = abordados > 0 ? Math.round(closed / abordados * 100) : 0;
+
+  // Score médio dos leads abordados
+  const scoresMed = allLeads
+    .filter(l => {
+      const key = getLeadKey(l);
+      return pipeline[key] && pipeline[key].status !== 'pending';
+    })
+    .map(l => calcScore(l).score);
+  const avgScore = scoresMed.length ? Math.round(scoresMed.reduce((a,b)=>a+b,0)/scoresMed.length) : 0;
+
+  // Leads por nicho (do pipeline salvo)
+  const byNiche = {};
+  leads.forEach(l => {
+    const nome = l.nome || '';
+    // Aproximação — usa categoria se disponível
+    const key = 'Geral';
+    byNiche[key] = (byNiche[key] || 0) + 1;
+  });
+
+  // Leads fechados com data
+  const closedLeads = allKeys
+    .filter(k => pipeline[k].status === 'closed')
+    .map(k => ({ ...pipeline[k], key: k }));
+
+  // Tempo médio até resposta (dias entre status changes — aproximado pela data)
+  // Como só temos 1 data por lead, usamos como referência
+
+  return {
+    total, pending, reached, replied, closed, abordados,
+    taxaResposta, taxaFechamento, taxaConversao, avgScore,
+    closedLeads,
+  };
+}
+
+function renderMetrics() {
+  const d = getMetricsData();
+  const el = document.getElementById('metricsContent');
+  if (!el) return;
+
+  if (d.total === 0) {
+    el.innerHTML = `<div class="metrics-empty">
+      Nenhum lead no pipeline ainda.<br>
+      Comece a prospectar, marque os status nos cards e as métricas aparecerão aqui.
+    </div>`;
+    return;
+  }
+
+  // Funil
+  const funnelSteps = [
+    { label: 'Total mapeados', count: d.total,     color: 'var(--muted-3)', pct: 100 },
+    { label: 'Abordados',      count: d.abordados, color: 'var(--gold)',    pct: d.total > 0 ? Math.round(d.abordados/d.total*100) : 0 },
+    { label: 'Responderam',    count: d.replied + d.closed, color: 'var(--orange)', pct: d.abordados > 0 ? Math.round((d.replied+d.closed)/d.abordados*100) : 0 },
+    { label: 'Fechados',       count: d.closed,    color: 'var(--green)',   pct: (d.replied+d.closed) > 0 ? Math.round(d.closed/(d.replied+d.closed)*100) : 0 },
+  ];
+
+  const funnelHtml = funnelSteps.map(s => `
+    <div class="funnel-step">
+      <div class="funnel-label">${s.label}</div>
+      <div class="funnel-bar-wrap">
+        <div class="metrics-bar-track">
+          <div class="metrics-bar-fill" style="width:${s.pct}%;background:${s.color}"></div>
+        </div>
+      </div>
+      <div class="funnel-count" style="color:${s.color}">${s.count}</div>
+      <div class="funnel-pct">${s.pct}%</div>
+    </div>`).join('');
+
+  // KPIs de taxa
+  const taxaRespostaClass  = d.taxaResposta  >= 30 ? 'trend-up' : d.taxaResposta  >= 15 ? 'trend-flat' : 'trend-down';
+  const taxaFechamentoClass= d.taxaFechamento>= 20 ? 'trend-up' : d.taxaFechamento>= 10 ? 'trend-flat' : 'trend-down';
+  const taxaConversaoClass = d.taxaConversao >= 10 ? 'trend-up' : d.taxaConversao >= 5  ? 'trend-flat' : 'trend-down';
+
+  const taxaRespostaBench  = d.taxaResposta  >= 30 ? 'Acima da média (≥30%)' : d.taxaResposta  >= 15 ? 'Na média (15-30%)' : 'Abaixo da média (<15%)';
+  const taxaFechamentoBench= d.taxaFechamento>= 20 ? 'Acima da média (≥20%)' : d.taxaFechamento>= 10 ? 'Na média (10-20%)' : 'Abaixo da média (<10%)';
+  const taxaConversaoBench = d.taxaConversao >= 10 ? 'Acima da média (≥10%)' : d.taxaConversao >= 5  ? 'Na média (5-10%)'  : 'Abaixo da média (<5%)';
+
+  // Leads fechados
+  const closedHtml = d.closedLeads.length > 0
+    ? `<table class="metrics-table">
+        <thead><tr>
+          <th>Nome</th><th>Endereço</th><th>Data</th>
+        </tr></thead>
+        <tbody>
+          ${d.closedLeads.map(l => `<tr>
+            <td style="font-weight:600">${l.nome || '—'}</td>
+            <td style="color:var(--muted-2)">${l.endereco || '—'}</td>
+            <td style="color:var(--green);font-family:'Space Grotesk',sans-serif">${l.date || '—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`
+    : `<div class="metrics-empty" style="padding:20px">Nenhum lead fechado ainda.</div>`;
+
+  el.innerHTML = `
+    <!-- KPIs principais -->
+    <div class="metrics-grid">
+      <div class="metric-card mc-gold">
+        <div class="metric-label">Total no Pipeline</div>
+        <div class="metric-value">${d.total}</div>
+        <div class="metric-sub">${d.pending} pendentes · ${d.abordados} abordados</div>
+      </div>
+      <div class="metric-card mc-orange">
+        <div class="metric-label">Taxa de Resposta</div>
+        <div class="metric-value">${d.taxaResposta}%</div>
+        <div class="metric-trend ${taxaRespostaClass}">${taxaRespostaBench}</div>
+      </div>
+      <div class="metric-card mc-blue">
+        <div class="metric-label">Taxa de Fechamento</div>
+        <div class="metric-value">${d.taxaFechamento}%</div>
+        <div class="metric-trend ${taxaFechamentoClass}">${taxaFechamentoBench}</div>
+      </div>
+      <div class="metric-card mc-green">
+        <div class="metric-label">Conversão Total</div>
+        <div class="metric-value">${d.taxaConversao}%</div>
+        <div class="metric-trend ${taxaConversaoClass}">${taxaConversaoBench}</div>
+      </div>
+    </div>
+
+    <div class="metrics-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="metric-card mc-purple">
+        <div class="metric-label">Leads Fechados</div>
+        <div class="metric-value" style="color:var(--green)">${d.closed}</div>
+        <div class="metric-sub">${d.replied} responderam · aguardando fechamento</div>
+      </div>
+      <div class="metric-card mc-gold">
+        <div class="metric-label">Score Médio Abordados</div>
+        <div class="metric-value" style="color:${d.avgScore>=60?'var(--orange)':d.avgScore>=40?'var(--gold)':'var(--muted-3)'}">${d.avgScore || '—'}</div>
+        <div class="metric-sub">Quanto mais alto, mais qualificados os leads</div>
+      </div>
+    </div>
+
+    <!-- Funil -->
+    <div class="metrics-section-title">Funil de Prospecção</div>
+    <div class="funnel-wrap">${funnelHtml}</div>
+
+    <!-- Interpretação -->
+    <div class="metrics-section-title">Interpretação</div>
+    <div class="funnel-wrap" style="font-size:13px;line-height:1.8;color:var(--muted-3)">
+      ${d.taxaResposta < 15
+        ? `<div style="color:var(--red);font-weight:600;margin-bottom:8px">⚠ Taxa de resposta baixa (${d.taxaResposta}%)</div>
+           <div>Revise o gancho da DM — pode estar muito genérico ou mencionando a fonte dos dados. O ideal é que a primeira mensagem pareça que você conhece o negócio pessoalmente.</div>`
+        : d.taxaResposta < 30
+        ? `<div style="color:var(--orange);font-weight:600;margin-bottom:8px">→ Taxa de resposta na média (${d.taxaResposta}%)</div>
+           <div>Você está no caminho certo. Para aumentar, personalize mais o gancho usando dados específicos do Instagram ou do bairro do lead.</div>`
+        : `<div style="color:var(--green);font-weight:600;margin-bottom:8px">✓ Taxa de resposta acima da média (${d.taxaResposta}%)</div>
+           <div>Excelente. Continue com a abordagem atual e foque em converter as respostas em chamadas de diagnóstico.</div>`
+      }
+      ${d.taxaFechamento < 10 && d.replied + d.closed > 0
+        ? `<div style="color:var(--red);font-weight:600;margin:12px 0 8px">⚠ Taxa de fechamento baixa (${d.taxaFechamento}%)</div>
+           <div>Leads respondendo mas não fechando indica problema na call de diagnóstico ou na proposta — não na prospecção. Revise o que está apresentando na conversa.</div>`
+        : ''
+      }
+      ${d.abordados === 0
+        ? `<div style="color:var(--muted-2)">Você ainda não marcou nenhum lead como abordado. Comece a prospectar e atualize os status para ver métricas reais.</div>`
+        : ''
+      }
+    </div>
+
+    <!-- Fechados -->
+    <div class="metrics-section-title">Leads Fechados</div>
+    <div style="background:var(--dark-2);border:1px solid var(--dark-4);border-radius:14px;overflow:hidden">
+      ${closedHtml}
+    </div>
+  `;
+}
+
+function exportMetricsCSV() {
+  const d = getMetricsData();
+  const pipeline = getPipeline();
+  const rows = Object.keys(pipeline).map(k => {
+    const l = pipeline[k];
+    return [
+      csvCell(l.nome), csvCell(l.endereco), csvCell(l.telefone),
+      l.status, l.date || '',
+      csvCell(l.problemas),
+    ].join(';');
+  });
+  const headers = 'Nome;Endereço;Telefone;Status;Data;Diagnóstico';
+  const csv = [headers, ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `vhalen_pipeline_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+
 
 /* ══════════════════════════════════════════
    TELA DE PIPELINE — renderização
@@ -1905,13 +2240,26 @@ function buildScoreRing(score, breakdown) {
 /* ══════════════════════════════════════════
    EXPORTAR CSV
 ══════════════════════════════════════════ */
+function stripHtml(str) {
+  return (str || '').replace(/<[^>]*>/g, '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').trim();
+}
+
+function csvCell(val) {
+  const clean = stripHtml(String(val || ''));
+  // Envolve em aspas se contém vírgula, ponto-e-vírgula, aspas ou quebra de linha
+  if (clean.includes(';') || clean.includes('"') || clean.includes('\n') || clean.includes('\r')) {
+    return `"${clean.replace(/"/g, '""')}"`;
+  }
+  return clean;
+}
+
 function exportCSV() {
   if (!allLeads.length) return;
 
   const headers = [
-    'Score', 'Nome', 'Endereço', 'Telefone', 'Avaliação', 'Total Avaliações',
-    'Site', 'Instagram', 'Seguidores IG', 'Último Post (dias)',
-    'Prioridade IA', 'Diagnóstico', 'DM WhatsApp'
+    'Score', 'Nome', 'Endereço', 'Telefone', 'Avaliação',
+    'Total Avaliações', 'Site', 'Instagram', 'Facebook', 'Email',
+    'Seguidores IG', 'Último Post (dias)', 'Prioridade IA', 'Diagnóstico', 'DM WhatsApp'
   ];
 
   const rows = allLeads
@@ -1919,29 +2267,31 @@ function exportCSV() {
     .sort((a, b) => b._score - a._score)
     .map(l => [
       l._score,
-      `"${(l.nome || '').replace(/"/g, '""')}"`,
-      `"${(l.endereco || '').replace(/"/g, '""')}"`,
-      l.telefone || '',
+      csvCell(l.nome),
+      csvCell(l.endereco),
+      csvCell(l.telefone),
       l.avaliacao || '',
       l.totalAvaliacoes || 0,
-      l.site || '',
-      l.instagram || '',
+      csvCell(l.site),
+      csvCell(l.instagram),
+      csvCell(l.facebook),
+      csvCell(l.email),
       l.igEnriched?.followers || '',
       l.igEnriched?.daysSinceLastPost ?? '',
       l.pontuacao || '',
-      `"${(l.problemas || '').replace(/"/g, '""')}"`,
-      `"${(l.dm || '').replace(/"/g, '""')}"`,
+      csvCell(l.problemas),
+      csvCell(l.dm),
     ]);
 
   const SEP = ';';
   const csv = [headers.join(SEP), ...rows.map(r => r.join(SEP))].join('\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
   const niche = document.getElementById('nicheInput').value || 'leads';
   const city  = document.getElementById('cityInput').value  || '';
-  a.href = url;
-  a.download = `vhalen_${niche}_${city}_${new Date().toISOString().slice(0,10)}.csv`.replace(/\s+/g, '_');
+  a.href     = url;
+  a.download = `vhalen_${niche}_${city}_${new Date().toISOString().slice(0,10)}.csv`.replace(/\s+/g,'_');
   a.click();
   URL.revokeObjectURL(url);
 
@@ -2038,22 +2388,10 @@ function buildCard(l, i) {
             <div class="copy-tag" id="ct${i}a">toque para copiar</div>
           </div>
           <div class="script-block">
-            <div class="script-lbl wa">💬 DM Dia 1 — Abertura</div>
+            <div class="script-lbl wa">💬 DM — WhatsApp</div>
             <div class="script-txt" onclick="cp(this,'ct${i}b')">${l.dm || '—'}</div>
             <div class="copy-tag" id="ct${i}b">toque para copiar</div>
           </div>
-          ${l.followup3 ? `
-          <div class="script-block">
-            <div class="script-lbl fu3">📤 DM Dia 3 — Revelação do Produto</div>
-            <div class="script-txt" onclick="cp(this,'ct${i}c')">${l.followup3}</div>
-            <div class="copy-tag" id="ct${i}c">toque para copiar</div>
-          </div>` : ''}
-          ${l.followup7 ? `
-          <div class="script-block">
-            <div class="script-lbl fu7">🔴 DM Dia 7 — Última Tentativa</div>
-            <div class="script-txt" onclick="cp(this,'ct${i}d')">${l.followup7}</div>
-            <div class="copy-tag" id="ct${i}d">toque para copiar</div>
-          </div>` : ''}
         </div>
       </div>
     </div>
