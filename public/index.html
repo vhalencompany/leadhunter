@@ -458,6 +458,81 @@ header {
 .card.s-replied  { border-left: 2px solid var(--orange); }
 .card.s-closed   { border-left: 2px solid var(--green); }
 
+/* ── AUDITORIA DE SITE ── */
+.audit-trigger {
+  width: 100%; background: transparent;
+  border: 1px dashed var(--dark-6); border-radius: 8px;
+  padding: 9px 18px; color: var(--muted-2);
+  font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.08em; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.audit-trigger:hover { border-color: rgba(96,165,250,0.4); color: var(--review); border-style: solid; background: var(--review-dim); }
+.audit-trigger:disabled { opacity: 0.4; cursor: not-allowed; }
+.audit-trigger.loading { border-style: solid; border-color: rgba(96,165,250,0.3); color: var(--review); }
+.audit-trigger.done { border-style: solid; border-color: rgba(74,222,128,0.3); color: var(--green); }
+
+.audit-box {
+  background: var(--dark-3); border: 1px solid var(--dark-5);
+  border-left: 2px solid var(--review); border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 10px; animation: fadeIn 0.3s ease;
+}
+.audit-box-label {
+  font-family: 'Space Grotesk', sans-serif; font-size: 8px; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--review); margin-bottom: 10px;
+}
+
+/* Score rings do Lighthouse */
+.lh-scores { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.lh-score {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: var(--dark-4); border-radius: 10px; padding: 10px 14px; flex: 1; min-width: 70px;
+}
+.lh-score-num {
+  font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; line-height: 1;
+}
+.lh-score-label { font-size: 8px; color: var(--muted-2); letter-spacing: 0.1em; text-transform: uppercase; }
+.lh-good  { color: var(--green); }
+.lh-ok    { color: var(--orange); }
+.lh-bad   { color: var(--red); }
+
+.lh-metrics { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.lh-metric {
+  background: var(--dark-4); border-radius: 6px; padding: 5px 10px;
+  font-size: 10px; color: var(--muted-3); font-family: 'Space Grotesk', sans-serif;
+}
+.lh-metric strong { color: var(--light); font-weight: 600; }
+
+.lh-issues { display: flex; flex-direction: column; gap: 4px; }
+.lh-issue {
+  font-size: 11px; color: var(--red); display: flex; align-items: center; gap: 6px;
+}
+.lh-issue::before { content: '✗'; font-weight: 700; flex-shrink: 0; }
+
+/* Wappalyzer */
+.wap-section { margin-bottom: 8px; }
+.wap-section-label {
+  font-size: 8px; color: var(--muted-2); letter-spacing: 0.12em; text-transform: uppercase;
+  font-family: 'Space Grotesk', sans-serif; font-weight: 600; margin-bottom: 5px;
+}
+.wap-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.wap-chip {
+  padding: 3px 9px; border-radius: 5px; font-size: 10px; font-weight: 600;
+  font-family: 'Space Grotesk', sans-serif; background: var(--dark-4); color: var(--muted-3);
+  border: 1px solid var(--dark-6);
+}
+.wap-flag {
+  display: flex; align-items: center; gap: 6px; font-size: 11px; margin-bottom: 4px;
+}
+.wap-flag.miss { color: var(--red); }
+.wap-flag.hit  { color: var(--green); }
+.wap-flag::before { font-weight: 700; flex-shrink: 0; }
+.wap-flag.miss::before { content: '✗'; }
+.wap-flag.hit::before  { content: '✓'; }
+
+.audit-divider { height: 1px; background: var(--dark-5); margin: 10px 0; }
+
 .enrich-trigger {
   width: 100%; background: transparent;
   border: 1px dashed var(--dark-6); border-radius: 8px;
@@ -757,12 +832,6 @@ footer { text-align: center; padding: 48px 24px 20px; font-size: 9px; color: var
 
   <div class="panel">
     <div class="panel-corner"></div>
-
-    <div class="sources-info">
-      <span class="sources-info-label">Fontes ativas</span>
-      <span class="source-chip source-chip-google">📍 Google Maps</span>
-      <span class="source-chip source-chip-instagram">📸 Instagram</span>
-    </div>
 
     <div style="margin-bottom:24px">
       <div class="field-label">Nicho / Segmento</div>
@@ -1952,7 +2021,12 @@ function buildCard(l, i) {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           Validar WhatsApp
         </button>
+        ${l.site ? `<button class="audit-trigger" id="ab${i}" onclick="auditSite(${i})">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Auditar Site — Performance & Tecnologia
+        </button>` : ''}
         <div id="enrichBox${i}"></div>
+        <div id="auditBox${i}"></div>
         <button class="scripts-toggle" onclick="tog(this,'sc${i}')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           VER ABORDAGENS
@@ -1984,6 +2058,132 @@ function buildCard(l, i) {
       </div>
     </div>
   </div>`;
+}
+
+/* ══════════════════════════════════════════
+   AUDITORIA DE SITE — Lighthouse + Wappalyzer
+   Sob demanda, só para leads com site.
+══════════════════════════════════════════ */
+async function auditSite(idx) {
+  const sorted = getFilteredLeads()
+    .map(l => ({ ...l, _score: calcScore(l).score }))
+    .sort((a, b) => b._score - a._score);
+  const lead = sorted[idx];
+  if (!lead || !lead.site) return;
+
+  const btn = document.getElementById(`ab${idx}`);
+  const box = document.getElementById(`auditBox${idx}`);
+  if (!btn || !box) return;
+  if (btn.classList.contains('done')) return;
+
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.innerHTML = `
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite">
+      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+    </svg>
+    Auditando site — pode levar até 2 minutos...`;
+
+  try {
+    const res = await fetch(window.location.origin + '/api/enrich', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ site: lead.site, tipo: 'site' })
+    });
+    const data = await res.json();
+    box.innerHTML = buildAuditBox(data);
+
+    btn.classList.remove('loading');
+    btn.classList.add('done');
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Site Auditado`;
+  } catch (e) {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Auditar Site — Performance & Tecnologia`;
+    box.innerHTML = `<div style="font-size:11px;color:var(--red);padding:8px 0">Erro: ${e.message}</div>`;
+  }
+}
+
+function buildAuditBox(data) {
+  const sections = [];
+
+  // ── LIGHTHOUSE ──
+  if (data.lighthouse && !data.lighthouse.erro) {
+    const lh = data.lighthouse;
+    const sc = lh.scores || {};
+    const scoreClass = v => v === null ? '' : v >= 80 ? 'lh-good' : v >= 50 ? 'lh-ok' : 'lh-bad';
+    const scoreLabel = v => v === null ? '—' : v;
+
+    const classificacao = lh.classificacao;
+    const classBadge = classificacao
+      ? `<span style="font-size:9px;padding:2px 8px;border-radius:5px;font-weight:700;font-family:'Space Grotesk',sans-serif;
+          background:${classificacao.cor==='green'?'rgba(74,222,128,0.1)':classificacao.cor==='orange'?'var(--orange-dim)':'rgba(248,113,113,0.1)'};
+          color:${classificacao.cor==='green'?'var(--green)':classificacao.cor==='orange'?'var(--orange)':'var(--red)'};
+          border:1px solid ${classificacao.cor==='green'?'rgba(74,222,128,0.3)':classificacao.cor==='orange'?'rgba(232,112,58,0.3)':'rgba(248,113,113,0.3)'}">
+          ${classificacao.label}</span>`
+      : '';
+
+    const metricsHtml = Object.entries(lh.metricas || {})
+      .filter(([,v]) => v)
+      .map(([k,v]) => {
+        const labels = { fcp:'Primeiro conteúdo', lcp:'Maior conteúdo', tbt:'Bloqueio total', cls:'Estabilidade visual', ttfb:'Tempo de resposta' };
+        return `<div class="lh-metric"><strong>${labels[k]||k}:</strong> ${v}</div>`;
+      }).join('');
+
+    const issuesHtml = (lh.seoIssues || [])
+      .map(i => `<div class="lh-issue">${i}</div>`).join('');
+
+    sections.push(`
+    <div class="audit-box-label">
+      ⚡ Performance & SEO — Google Lighthouse ${classBadge}
+    </div>
+    <div class="lh-scores">
+      <div class="lh-score"><div class="lh-score-num ${scoreClass(sc.performance)}">${scoreLabel(sc.performance)}</div><div class="lh-score-label">Performance</div></div>
+      <div class="lh-score"><div class="lh-score-num ${scoreClass(sc.seo)}">${scoreLabel(sc.seo)}</div><div class="lh-score-label">SEO</div></div>
+      <div class="lh-score"><div class="lh-score-num ${scoreClass(sc.acessibilidade)}">${scoreLabel(sc.acessibilidade)}</div><div class="lh-score-label">Mobile</div></div>
+      <div class="lh-score"><div class="lh-score-num ${scoreClass(sc.boasPraticas)}">${scoreLabel(sc.boasPraticas)}</div><div class="lh-score-label">Boas práticas</div></div>
+    </div>
+    ${metricsHtml ? `<div class="lh-metrics">${metricsHtml}</div>` : ''}
+    ${issuesHtml ? `<div class="lh-issues">${issuesHtml}</div>` : ''}`);
+  } else if (data.lighthouse?.erro) {
+    sections.push(`<div class="audit-box-label">⚡ Lighthouse</div><div style="font-size:11px;color:var(--muted-2)">${data.lighthouse.erro}</div>`);
+  }
+
+  // ── WAPPALYZER ──
+  if (data.wappalyzer && !data.wappalyzer.erro) {
+    const wap = data.wappalyzer;
+    const grupos = wap.tecnologias || {};
+    const flags  = wap.flags || {};
+
+    sections.push('<div class="audit-divider"></div>');
+
+    const grupoLabels = { cms:'CMS', analytics:'Analytics', marketing:'Marketing', ecommerce:'E-commerce', hosting:'Hospedagem', framework:'Framework' };
+    const gruposHtml = Object.entries(grupoLabels)
+      .filter(([k]) => grupos[k]?.length > 0)
+      .map(([k, label]) => `
+        <div class="wap-section">
+          <div class="wap-section-label">${label}</div>
+          <div class="wap-chips">${grupos[k].map(t => `<span class="wap-chip">${t}</span>`).join('')}</div>
+        </div>`).join('');
+
+    const flagsHtml = [
+      { key: 'temPixelFacebook',  label: 'Pixel do Facebook ativo',        hit: flags.temPixelFacebook },
+      { key: 'temGoogleAnalytics',label: 'Google Analytics instalado',      hit: flags.temGoogleAnalytics },
+      { key: 'temGoogleAds',      label: 'Tag de conversão Google Ads',     hit: flags.temGoogleAds },
+      { key: 'temChatbot',        label: 'Chatbot de atendimento',          hit: flags.temChatbot },
+    ].map(f => `<div class="wap-flag ${f.hit?'hit':'miss'}">${f.label}</div>`).join('');
+
+    sections.push(`
+    <div class="audit-box-label">🔍 Stack Tecnológico — ${wap.totalDetectadas || 0} tecnologias detectadas</div>
+    ${flagsHtml ? `<div style="margin-bottom:10px">${flagsHtml}</div>` : ''}
+    ${gruposHtml}`);
+  } else if (data.wappalyzer?.erro) {
+    sections.push(`<div class="audit-divider"></div><div class="audit-box-label">🔍 Wappalyzer</div><div style="font-size:11px;color:var(--muted-2)">${data.wappalyzer.erro}</div>`);
+  }
+
+  return sections.length
+    ? `<div class="audit-box">${sections.join('')}</div>`
+    : '';
 }
 
 /* ══════════════════════════════════════════
