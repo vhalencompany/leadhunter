@@ -8,16 +8,9 @@ export default async function handler(req, res) {
   const { telefone, site, tipo } = req.body;
   const APIFY = process.env.APIFY_TOKEN;
 
-  // tipo: 'whatsapp' | 'site' | 'all'
-  // 'whatsapp' — só valida WA (sem site necessário)
-  // 'site'     — Lighthouse + Wappalyzer (precisa de site)
-  // 'all'      — tudo junto
-
   const result = { whatsapp: null, lighthouse: null, wappalyzer: null };
 
-  // ══════════════════════════════════════════
-  // WHATSAPP
-  // ══════════════════════════════════════════
+  // ── WHATSAPP ──────────────────────────────────────────────────────────────
   if (tipo === 'whatsapp' || tipo === 'all') {
     if (!telefone) {
       result.whatsapp = { ativo: null, erro: 'Número não informado' };
@@ -40,21 +33,15 @@ export default async function handler(req, res) {
     }
   }
 
-  // ══════════════════════════════════════════
-  // LIGHTHOUSE + WAPPALYZER (sob demanda)
-  // Só roda se o lead tem site
-  // ══════════════════════════════════════════
+  // ── SITE: Lighthouse + Wappalyzer ────────────────────────────────────────
   if ((tipo === 'site' || tipo === 'all') && site) {
     const siteUrl = site.startsWith('http') ? site : `https://${site}`;
-
-    // Dispara os dois actors em paralelo
-    const [lighthouseRes, wappalyzerRes] = await Promise.allSettled([
+    const [lhRes, wapRes] = await Promise.allSettled([
       runLighthouse(siteUrl, APIFY),
       runWappalyzer(siteUrl, APIFY),
     ]);
-
-    result.lighthouse  = lighthouseRes.status  === 'fulfilled' ? lighthouseRes.value  : { erro: lighthouseRes.reason?.message  || 'Falhou' };
-    result.wappalyzer  = wappalyzerRes.status  === 'fulfilled' ? wappalyzerRes.value  : { erro: wappalyzerRes.reason?.message  || 'Falhou' };
+    result.lighthouse = lhRes.status === 'fulfilled' ? lhRes.value : { erro: lhRes.reason?.message || 'Falhou' };
+    result.wappalyzer = wapRes.status === 'fulfilled' ? wapRes.value : { erro: wapRes.reason?.message || 'Falhou' };
   } else if ((tipo === 'site' || tipo === 'all') && !site) {
     result.lighthouse = { erro: 'Lead não possui site cadastrado' };
     result.wappalyzer = { erro: 'Lead não possui site cadastrado' };
@@ -63,200 +50,197 @@ export default async function handler(req, res) {
   return res.status(200).json(result);
 }
 
-// ══════════════════════════════════════════
-// LIGHTHOUSE — audit de performance e SEO
-// Actor: microworlds/lighthouse-audit
-// Custo: ~$0.005 por audit (muito barato)
-// ══════════════════════════════════════════
+// ── LIGHTHOUSE ───────────────────────────────────────────────────────────────
+// Actor: microworlds~lighthouse-audit (confirmado, >99% success rate)
 async function runLighthouse(url, APIFY) {
-  // Dispara o run
   const runRes = await fetch(
     `https://api.apify.com/v2/acts/microworlds~lighthouse-audit/runs?token=${APIFY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        urls: [url],
-        config: { settings: { emulatedFormFactor: 'mobile' } }
+        startUrls: [{ url }],
+        emulatedFormFactor: 'mobile',
+        onlyCategories: ['performance', 'seo', 'accessibility', 'best-practices'],
       })
     }
   );
-  if (!runRes.ok) throw new Error(`Lighthouse run failed: ${runRes.status}`);
+  if (!runRes.ok) {
+    const txt = await runRes.text();
+    throw new Error(`Lighthouse error ${runRes.status}: ${txt.slice(0, 200)}`);
+  }
   const runData = await runRes.json();
-  const runId   = runData.data?.id;
-  const dsId    = runData.data?.defaultDatasetId;
+  const runId = runData.data?.id;
+  const dsId  = runData.data?.defaultDatasetId;
   if (!runId) throw new Error('Lighthouse: runId não retornado');
 
-  // Polling — timeout 90s
   const FAILED = ['FAILED', 'ABORTED', 'TIMED-OUT'];
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < 20; i++) {
     await sleep(5000);
     const st = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY}`).then(r => r.json());
     const status = st?.data?.status;
     if (FAILED.includes(status)) throw new Error(`Lighthouse falhou: ${status}`);
     if (status === 'SUCCEEDED') {
-      const items = await fetch(`https://api.apify.com/v2/datasets/${dsId}/items?token=${APIFY}&limit=1`).then(r => r.json());
-      const item  = Array.isArray(items) ? items[0] : items;
-      if (!item) throw new Error('Lighthouse: sem dados');
-
-      // Extrai scores (0-100)
-      const cats = item.categories || item.lhr?.categories || {};
-      const score = key => {
-        const cat = cats[key];
-        if (!cat) return null;
-        const v = cat.score ?? cat.value;
-        return v !== null ? Math.round(v * 100) : null;
-      };
-
-      // Métricas de performance
-      const audits = item.audits || item.lhr?.audits || {};
-      const fcp = audits['first-contentful-paint']?.displayValue || null;
-      const lcp = audits['largest-contentful-paint']?.displayValue || null;
-      const tbt = audits['total-blocking-time']?.displayValue || null;
-      const cls = audits['cumulative-layout-shift']?.displayValue || null;
-      const ttfb = audits['server-response-time']?.displayValue || null;
-
-      // SEO issues críticos
-      const seoIssues = [];
-      if (audits['meta-description']?.score === 0) seoIssues.push('Sem meta description');
-      if (audits['document-title']?.score === 0) seoIssues.push('Sem title tag');
-      if (audits['viewport']?.score === 0) seoIssues.push('Não otimizado para mobile');
-      if (audits['robots-txt']?.score === 0) seoIssues.push('Sem robots.txt');
-      if (audits['canonical']?.score === 0) seoIssues.push('Sem URL canônica');
-      if (audits['image-alt']?.score === 0) seoIssues.push('Imagens sem alt text');
-
-      return {
-        url,
-        scores: {
-          performance:   score('performance'),
-          seo:           score('seo'),
-          acessibilidade:score('accessibility'),
-          boasPraticas:  score('best-practices'),
-        },
-        metricas: { fcp, lcp, tbt, cls, ttfb },
-        seoIssues,
-        classificacao: classificarSite(score('performance'), score('seo')),
-      };
+      const raw = await fetch(`https://api.apify.com/v2/datasets/${dsId}/items?token=${APIFY}&limit=1`).then(r => r.json());
+      const item = Array.isArray(raw) ? raw[0] : raw;
+      if (!item) throw new Error('Lighthouse: sem dados retornados');
+      return parseLighthouseResult(item, url);
     }
   }
-  throw new Error('Lighthouse: timeout');
+  throw new Error('Lighthouse: timeout após 100s');
 }
 
-function classificarSite(perf, seo) {
-  if (perf === null && seo === null) return null;
-  const avg = ((perf || 0) + (seo || 0)) / 2;
-  if (avg >= 80) return { label: 'Bom', cor: 'green' };
-  if (avg >= 50) return { label: 'Regular', cor: 'orange' };
-  return { label: 'Crítico', cor: 'red' };
+function parseLighthouseResult(item, url) {
+  // Suporta múltiplos formatos de output do actor
+  const cats = item.categories || item.lhr?.categories || item.result?.categories || {};
+  const audits = item.audits || item.lhr?.audits || item.result?.audits || {};
+
+  const score = key => {
+    const cat = cats[key];
+    if (!cat) return null;
+    const v = cat.score ?? cat.value;
+    return v !== null && v !== undefined ? Math.round(Number(v) * 100) : null;
+  };
+
+  const metric = key => audits[key]?.displayValue || null;
+
+  const seoIssues = [];
+  if (audits['meta-description']?.score === 0) seoIssues.push('Sem meta description');
+  if (audits['document-title']?.score === 0) seoIssues.push('Sem title tag');
+  if (audits['viewport']?.score === 0) seoIssues.push('Não otimizado para mobile');
+  if (audits['robots-txt']?.score === 0) seoIssues.push('Sem robots.txt');
+  if (audits['image-alt']?.score === 0) seoIssues.push('Imagens sem texto alternativo');
+  if (audits['link-text']?.score === 0) seoIssues.push('Links sem texto descritivo');
+
+  const perf = score('performance');
+  const seo  = score('seo');
+  const avg  = perf !== null && seo !== null ? (perf + seo) / 2 : null;
+  const classificacao = avg === null ? null
+    : avg >= 80 ? { label: 'Bom', cor: 'green' }
+    : avg >= 50 ? { label: 'Regular', cor: 'orange' }
+    : { label: 'Crítico', cor: 'red' };
+
+  return {
+    url,
+    scores: {
+      performance:    perf,
+      seo:            seo,
+      acessibilidade: score('accessibility'),
+      boasPraticas:   score('best-practices'),
+    },
+    metricas: {
+      fcp:  metric('first-contentful-paint'),
+      lcp:  metric('largest-contentful-paint'),
+      tbt:  metric('total-blocking-time'),
+      cls:  metric('cumulative-layout-shift'),
+      ttfb: metric('server-response-time'),
+    },
+    seoIssues,
+    classificacao,
+  };
 }
 
-// ══════════════════════════════════════════
-// WAPPALYZER — detecta stack tecnológico
-// Actor: scraping_samurai/techstack-wappalyzer-scraper
-// Custo: ~$0.01-0.05 por URL
-// ══════════════════════════════════════════
+// ── WAPPALYZER ───────────────────────────────────────────────────────────────
+// Actor: scraping_samurai~techstack-wappalyzer-scraper
+// Input correto: array de objetos { url }
 async function runWappalyzer(url, APIFY) {
   const runRes = await fetch(
     `https://api.apify.com/v2/acts/scraping_samurai~techstack-wappalyzer-scraper/runs?token=${APIFY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ urls: [{ url }], maxRequestsPerCrawl: 1 })
+      body: JSON.stringify({
+        urls: [{ url }],
+        maxRequestsPerCrawl: 1,
+      })
     }
   );
-  if (!runRes.ok) throw new Error(`Wappalyzer run failed: ${runRes.status}`);
+  if (!runRes.ok) {
+    const txt = await runRes.text();
+    throw new Error(`Wappalyzer error ${runRes.status}: ${txt.slice(0, 200)}`);
+  }
   const runData = await runRes.json();
-  const runId   = runData.data?.id;
-  const dsId    = runData.data?.defaultDatasetId;
+  const runId = runData.data?.id;
+  const dsId  = runData.data?.defaultDatasetId;
   if (!runId) throw new Error('Wappalyzer: runId não retornado');
 
   const FAILED = ['FAILED', 'ABORTED', 'TIMED-OUT'];
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 14; i++) {
     await sleep(5000);
     const st = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY}`).then(r => r.json());
     const status = st?.data?.status;
     if (FAILED.includes(status)) throw new Error(`Wappalyzer falhou: ${status}`);
     if (status === 'SUCCEEDED') {
-      const items = await fetch(`https://api.apify.com/v2/datasets/${dsId}/items?token=${APIFY}&limit=1`).then(r => r.json());
-      const item  = Array.isArray(items) ? items[0] : items;
-      if (!item) throw new Error('Wappalyzer: sem dados');
-
-      const techs = item.technologies || item.tech || [];
-
-      // Agrupa por categoria com foco em dados relevantes para prospecção
-      const grupos = {
-        cms:        [],
-        analytics:  [],
-        marketing:  [],
-        ecommerce:  [],
-        hosting:    [],
-        framework:  [],
-        outros:     [],
-      };
-
-      const categoriaMap = {
-        'CMS': 'cms', 'Blog': 'cms',
-        'Analytics': 'analytics', 'Tag managers': 'analytics',
-        'Marketing automation': 'marketing', 'Email': 'marketing', 'Advertising': 'marketing',
-        'Ecommerce': 'ecommerce', 'Payment processors': 'ecommerce',
-        'Web servers': 'hosting', 'CDN': 'hosting', 'Hosting': 'hosting',
-        'JavaScript frameworks': 'framework', 'Web frameworks': 'framework', 'UI frameworks': 'framework',
-      };
-
-      techs.forEach(t => {
-        const nome = t.name || t.technology || '';
-        const cats = t.categories || [];
-        let grupo = 'outros';
-        for (const cat of cats) {
-          const catNome = typeof cat === 'string' ? cat : cat.name || '';
-          if (categoriaMap[catNome]) { grupo = categoriaMap[catNome]; break; }
-        }
-        if (nome && !grupos[grupo].includes(nome)) grupos[grupo].push(nome);
-      });
-
-      // Flags relevantes para diagnóstico
-      const temPixelFacebook = techs.some(t => (t.name || '').toLowerCase().includes('facebook pixel') || (t.name || '').toLowerCase().includes('meta pixel'));
-      const temGoogleAnalytics = techs.some(t => (t.name || '').toLowerCase().includes('google analytics') || (t.name || '').toLowerCase().includes('ga4'));
-      const temGoogleAds = techs.some(t => (t.name || '').toLowerCase().includes('google ads') || (t.name || '').toLowerCase().includes('google tag'));
-      const temChatbot = techs.some(t => ['Tidio', 'Intercom', 'Zendesk', 'JivoChat', 'LiveChat'].some(c => (t.name || '').includes(c)));
-      const temWordPress = grupos.cms.some(c => c.toLowerCase().includes('wordpress'));
-      const temWix = grupos.cms.some(c => c.toLowerCase().includes('wix'));
-      const temShopify = grupos.ecommerce.some(c => c.toLowerCase().includes('shopify'));
-
-      // Diagnóstico gerado aqui — sinal direto para a IA
-      const diagnosticoTech = [];
-      if (!temPixelFacebook) diagnosticoTech.push('Sem Pixel do Facebook — não consegue fazer remarketing');
-      if (!temGoogleAnalytics) diagnosticoTech.push('Sem Google Analytics — tráfego não é mensurado');
-      if (!temGoogleAds) diagnosticoTech.push('Sem tag de conversão do Google Ads');
-      if (temWix) diagnosticoTech.push('Site em Wix — limitações técnicas de SEO');
-      if (temChatbot) diagnosticoTech.push('Tem chatbot ativo');
-
-      return {
-        url,
-        tecnologias: grupos,
-        flags: { temPixelFacebook, temGoogleAnalytics, temGoogleAds, temChatbot, temWordPress, temWix, temShopify },
-        diagnosticoTech,
-        totalDetectadas: techs.length,
-      };
+      const raw = await fetch(`https://api.apify.com/v2/datasets/${dsId}/items?token=${APIFY}&limit=1`).then(r => r.json());
+      const item = Array.isArray(raw) ? raw[0] : raw;
+      if (!item) throw new Error('Wappalyzer: sem dados retornados');
+      return parseWappalyzerResult(item, url);
     }
   }
-  throw new Error('Wappalyzer: timeout');
+  throw new Error('Wappalyzer: timeout após 70s');
 }
 
-// ── HELPERS ──────────────────────────────
+function parseWappalyzerResult(item, url) {
+  // Suporta múltiplos formatos de saída
+  const techs = item.technologies || item.tech || item.techStack || [];
+
+  const categoriaMap = {
+    'CMS': 'cms', 'Blog': 'cms',
+    'Analytics': 'analytics', 'Tag managers': 'analytics',
+    'Marketing automation': 'marketing', 'Advertising': 'marketing', 'Email': 'marketing',
+    'Ecommerce': 'ecommerce', 'Payment processors': 'ecommerce',
+    'Web servers': 'hosting', 'CDN': 'hosting', 'Hosting': 'hosting',
+    'JavaScript frameworks': 'framework', 'Web frameworks': 'framework',
+  };
+
+  const grupos = { cms: [], analytics: [], marketing: [], ecommerce: [], hosting: [], framework: [] };
+
+  techs.forEach(t => {
+    const nome = t.name || t.technology || '';
+    const cats = t.categories || [];
+    let grupo = null;
+    for (const cat of cats) {
+      const catNome = typeof cat === 'string' ? cat : cat.name || '';
+      if (categoriaMap[catNome]) { grupo = categoriaMap[catNome]; break; }
+    }
+    if (nome && grupo && !grupos[grupo].includes(nome)) grupos[grupo].push(nome);
+  });
+
+  const hasName = n => techs.some(t => (t.name || '').toLowerCase().includes(n.toLowerCase()));
+
+  const flags = {
+    temPixelFacebook:  hasName('Facebook Pixel') || hasName('Meta Pixel'),
+    temGoogleAnalytics:hasName('Google Analytics') || hasName('GA4'),
+    temGoogleAds:      hasName('Google Ads') || hasName('Google Tag'),
+    temChatbot:        ['Tidio','Intercom','JivoChat','LiveChat','Zendesk','Tawk'].some(c => hasName(c)),
+    temWordPress:      hasName('WordPress'),
+    temWix:            hasName('Wix'),
+    temShopify:        hasName('Shopify'),
+  };
+
+  const diagnosticoTech = [];
+  if (!flags.temPixelFacebook)   diagnosticoTech.push('Sem Pixel do Facebook — remarketing impossível');
+  if (!flags.temGoogleAnalytics) diagnosticoTech.push('Sem Google Analytics — tráfego não mensurado');
+  if (!flags.temGoogleAds)       diagnosticoTech.push('Sem tag de conversão do Google Ads');
+  if (flags.temWix)              diagnosticoTech.push('Site em Wix — limitações de SEO técnico');
+
+  return { url, tecnologias: grupos, flags, diagnosticoTech, totalDetectadas: techs.length };
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-function normalizarTelefone(telefone) {
-  const digits = (telefone || '').replace(/\D/g, '');
-  if (!digits) return null;
-  if (digits.startsWith('55') && digits.length >= 12) return digits;
-  if (digits.length === 11 || digits.length === 10) return '55' + digits;
+function normalizarTelefone(tel) {
+  const d = (tel || '').replace(/\D/g, '');
+  if (!d) return null;
+  if (d.startsWith('55') && d.length >= 12) return d;
+  if (d.length === 11 || d.length === 10) return '55' + d;
   return null;
 }
 
-function formatarTelefone(phoneInt) {
-  const d = phoneInt.replace(/\D/g, '');
+function formatarTelefone(p) {
+  const d = p.replace(/\D/g, '');
   if (d.startsWith('55') && d.length === 13) return `+55 (${d.slice(2,4)}) ${d.slice(4,9)}-${d.slice(9)}`;
   if (d.startsWith('55') && d.length === 12) return `+55 (${d.slice(2,4)}) ${d.slice(4,8)}-${d.slice(8)}`;
-  return phoneInt;
+  return p;
 }
