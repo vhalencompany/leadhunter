@@ -2040,6 +2040,10 @@ async function hunt() {
     const newPlaces = filterNewPlaces(places);
     const dedupCount = places.length - newPlaces.length;
 
+    // Registra métricas
+    recordLeadsMapped(newPlaces.length);
+    if (dedupCount > 0) recordDedupFiltered(dedupCount);
+
     if (newPlaces.length === 0) {
       document.getElementById('emptyBox').textContent =
         `Todos os ${places.length} leads já foram vistos. Tente outra variante de busca ou resete o histórico.`;
@@ -2371,12 +2375,7 @@ function buildCard(l, i) {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           Validar WhatsApp
         </button>
-        ${l.site ? `<button class="audit-trigger" id="ab${i}" onclick="auditSite(${i})">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Auditar Site — Performance & Tecnologia
-        </button>` : ''}
         <div id="enrichBox${i}"></div>
-        <div id="auditBox${i}"></div>
         <button class="scripts-toggle" onclick="tog(this,'sc${i}')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           VER ABORDAGENS
@@ -2566,6 +2565,11 @@ async function enrichLead(idx) {
     const data = await res.json();
     box.innerHTML = buildEnrichBox(data, lead);
 
+    // Registra métrica de WhatsApp
+    if (data.whatsapp && data.whatsapp.ativo !== null) {
+      recordWaValidated(data.whatsapp.ativo === true);
+    }
+
     btn.classList.remove('loading');
     btn.classList.add('done');
     btn.innerHTML = `
@@ -2622,16 +2626,6 @@ function togPl(btn, id) {
     : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg> Ocultar';
 }
 
-function cpText(el, hintId) {
-  navigator.clipboard.writeText(el.textContent.trim()).then(() => {
-    const h = document.getElementById(hintId);
-    if (!h) return;
-    h.textContent = '✓ copiado';
-    h.classList.add('done');
-    setTimeout(() => { h.textContent = 'toque para copiar'; h.classList.remove('done'); }, 2200);
-  }).catch(() => {});
-}
-
 function tog(btn, id) {
   const s = document.getElementById(id);
   s.classList.toggle('open');
@@ -2640,13 +2634,342 @@ function tog(btn, id) {
     : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> VER ABORDAGENS';
 }
 
+function cpText(el, hintId) {
+  navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+    const h = document.getElementById(hintId);
+    if (!h) return;
+    h.textContent = '✓ copiado';
+    h.classList.add('done');
+    setTimeout(() => { h.textContent = 'toque para copiar'; h.classList.remove('done'); }, 2200);
+    incrementScriptsCopied();
+  }).catch(() => {});
+}
+
 function cp(el, hintId) {
   navigator.clipboard.writeText(el.textContent.trim()).then(() => {
     const h = document.getElementById(hintId);
     h.textContent = '✓ copiado';
     h.classList.add('done');
     setTimeout(() => { h.textContent = 'toque para copiar'; h.classList.remove('done'); }, 2200);
+    incrementScriptsCopied();
   }).catch(() => {});
+}
+
+/* ══════════════════════════════════════════
+   MÉTRICAS — armazenamento de eventos
+══════════════════════════════════════════ */
+const METRICS_KEY   = 'vhalen_metrics';
+const TICKET_KEY    = 'vhalen_ticket';
+const WA_VALID_KEY  = 'vhalen_wa_validated';
+
+function getMetricsStore() {
+  try { return JSON.parse(localStorage.getItem(METRICS_KEY) || '{}'); }
+  catch { return {}; }
+}
+function saveMetricsStore(d) {
+  try { localStorage.setItem(METRICS_KEY, JSON.stringify(d)); } catch {}
+}
+
+function getTicket() {
+  return parseInt(localStorage.getItem(TICKET_KEY) || '1000', 10);
+}
+function saveTicket(v) {
+  localStorage.setItem(TICKET_KEY, String(v));
+}
+
+// Incrementa scripts copiados
+function incrementScriptsCopied() {
+  const d = getMetricsStore();
+  d.scriptsCopied = (d.scriptsCopied || 0) + 1;
+  d.lastAction = new Date().toISOString();
+  saveMetricsStore(d);
+}
+
+// Registra leads mapeados numa sessão
+function recordLeadsMapped(count) {
+  const d = getMetricsStore();
+  d.totalMapped = (d.totalMapped || 0) + count;
+  d.sessions    = (d.sessions    || 0) + 1;
+  d.lastSession = new Date().toISOString();
+  saveMetricsStore(d);
+}
+
+// Registra WhatsApp validado
+function recordWaValidated(ativo) {
+  const d = getMetricsStore();
+  d.waChecked = (d.waChecked || 0) + 1;
+  if (ativo) d.waActive = (d.waActive || 0) + 1;
+  saveMetricsStore(d);
+}
+
+// Registra leads filtrados pelo dedup
+function recordDedupFiltered(count) {
+  const d = getMetricsStore();
+  d.dedupFiltered = (d.dedupFiltered || 0) + count;
+  saveMetricsStore(d);
+}
+
+/* ══════════════════════════════════════════
+   TELA DE MÉTRICAS
+══════════════════════════════════════════ */
+function renderMetrics() {
+  const el = document.getElementById('metricsContent');
+  if (!el) return;
+
+  const ms       = getMetricsStore();
+  const pipeline = getPipeline();
+  const ticket   = getTicket();
+  const seenIds  = getSeenIds();
+
+  // Pipeline
+  const allPipeKeys = Object.keys(pipeline);
+  const plLeads     = allPipeKeys.map(k => pipeline[k]);
+  const total       = seenIds.size; // total já mapeados (dedup)
+  const abordados   = plLeads.filter(l => l.status !== 'pending').length;
+  const responderam = plLeads.filter(l => l.status === 'replied' || l.status === 'closed').length;
+  const fechados    = plLeads.filter(l => l.status === 'closed').length;
+  const pending     = plLeads.filter(l => l.status === 'pending').length;
+
+  // Taxas
+  const taxaAbordagem  = total > 0 ? Math.round(abordados / total * 100) : 0;
+  const taxaResposta   = abordados > 0 ? Math.round(responderam / abordados * 100) : 0;
+  const taxaFechamento = responderam > 0 ? Math.round(fechados / responderam * 100) : 0;
+  const taxaConversao  = abordados > 0 ? Math.round(fechados / abordados * 100) : 0;
+
+  // Pipeline potencial
+  const leadsQuentes = allLeads.filter(l => l.pontuacao === 'alta' || calcScore(l).score >= 45).length;
+  const pipelinePotencial = leadsQuentes * ticket;
+
+  // Scripts copiados e tempo economizado
+  const scriptsCopied  = ms.scriptsCopied || 0;
+  const totalMapped    = ms.totalMapped   || total;
+  const tempoEconomizado = Math.round(totalMapped * 10 / 60 * 10) / 10; // 10 min por lead
+
+  // WhatsApp
+  const waChecked = ms.waChecked || 0;
+  const waActive  = ms.waActive  || 0;
+  const waTaxa    = waChecked > 0 ? Math.round(waActive / waChecked * 100) : null;
+
+  // Dedup
+  const dedupFiltered = ms.dedupFiltered || 0;
+
+  // Distribuição de vulnerabilidade dos leads atuais
+  const vulnCounts = { sem_site: 0, ig_parado: 0, nota_baixa: 0, sem_ig: 0, sem_tel: 0 };
+  allLeads.forEach(l => {
+    if (!l.site) vulnCounts.sem_site++;
+    if (!l.instagram) vulnCounts.sem_ig++;
+    if (!l.telefone) vulnCounts.sem_tel++;
+    if (l.igEnriched?.daysSinceLastPost > 30) vulnCounts.ig_parado++;
+    if (l.avaliacao && parseFloat(l.avaliacao) < 4.0) vulnCounts.nota_baixa++;
+  });
+  const vulnTotal = allLeads.length || 1;
+
+  // Helpers
+  const fmtMoney = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 });
+  const scoreClass = (v, good, mid) => v >= good ? 'trend-up' : v >= mid ? 'trend-flat' : 'trend-down';
+  const bench = (v, good, mid, labels) => v >= good ? labels[0] : v >= mid ? labels[1] : labels[2];
+
+  el.innerHTML = `
+  <!-- TICKET MÉDIO -->
+  <div style="background:var(--dark-2);border:1px solid var(--dark-4);border-radius:14px;padding:18px 20px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <div style="flex:1;min-width:200px">
+      <div class="metric-label">Ticket Médio configurado</div>
+      <div style="font-size:11px;color:var(--muted-2);margin-top:4px">Usado para calcular o pipeline potencial</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:13px;color:var(--muted-2);font-family:'Space Grotesk',sans-serif">R$</span>
+      <input type="number" id="ticketInput" value="${ticket}" min="100" step="100"
+        style="width:110px;background:var(--dark-3);border:1px solid var(--dark-5);border-radius:8px;
+               padding:8px 12px;color:var(--light);font-family:'Space Grotesk',sans-serif;
+               font-size:16px;font-weight:700;outline:none;text-align:center"
+        oninput="saveTicket(parseInt(this.value)||1000);renderMetrics()">
+    </div>
+  </div>
+
+  <!-- PIPELINE POTENCIAL — destaque -->
+  <div style="background:linear-gradient(135deg,rgba(200,169,110,0.1),rgba(232,112,58,0.06));border:1px solid rgba(200,169,110,0.25);border-radius:18px;padding:24px 28px;margin-bottom:24px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--orange))"></div>
+    <div class="metric-label" style="margin-bottom:8px">💰 Pipeline Potencial em Oportunidades Quentes</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:48px;font-weight:700;
+                background:linear-gradient(135deg,var(--gold),var(--gold-2));
+                -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                background-clip:text;line-height:1;margin-bottom:10px">
+      ${fmtMoney(pipelinePotencial)}
+    </div>
+    <div style="font-size:13px;color:var(--muted-3)">
+      ${leadsQuentes} leads com score ≥ 45 pts × ${fmtMoney(ticket)} ticket médio
+      ${leadsQuentes === 0 ? ' — <span style="color:var(--orange)">Rode uma busca para ver suas oportunidades</span>' : ''}
+    </div>
+  </div>
+
+  <!-- KPIs VOLUME -->
+  <div class="metrics-section-title">Volume e Funil</div>
+  <div class="metrics-grid">
+    <div class="metric-card mc-gold">
+      <div class="metric-label">Total Mapeados</div>
+      <div class="metric-value">${total}</div>
+      <div class="metric-sub">${dedupFiltered} duplicatas filtradas</div>
+    </div>
+    <div class="metric-card mc-orange">
+      <div class="metric-label">Abordados</div>
+      <div class="metric-value">${abordados}</div>
+      <div class="metric-sub">
+        <span class="metric-trend ${scoreClass(taxaAbordagem,30,15)}">
+          ${taxaAbordagem}% dos mapeados
+        </span>
+      </div>
+    </div>
+    <div class="metric-card mc-blue">
+      <div class="metric-label">Responderam</div>
+      <div class="metric-value">${responderam}</div>
+      <div class="metric-sub">
+        <span class="metric-trend ${scoreClass(taxaResposta,30,15)}">
+          ${taxaResposta}% dos abordados
+        </span>
+      </div>
+    </div>
+    <div class="metric-card mc-green">
+      <div class="metric-label">Fechados</div>
+      <div class="metric-value" style="color:var(--green)">${fechados}</div>
+      <div class="metric-sub">
+        <span class="metric-trend ${scoreClass(taxaFechamento,20,10)}">
+          ${taxaFechamento}% dos que responderam
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs ENGAJAMENTO -->
+  <div class="metrics-section-title">Engajamento e Produtividade</div>
+  <div class="metrics-grid">
+    <div class="metric-card mc-purple">
+      <div class="metric-label">Scripts Copiados</div>
+      <div class="metric-value" style="color:#A855F7">${scriptsCopied}</div>
+      <div class="metric-sub">${abordados > 0 ? Math.round(scriptsCopied/abordados*10)/10 : 0} por lead abordado</div>
+    </div>
+    <div class="metric-card mc-gold">
+      <div class="metric-label">Tempo Economizado</div>
+      <div class="metric-value">${tempoEconomizado}h</div>
+      <div class="metric-sub">vs pesquisa manual (10min/lead)</div>
+    </div>
+    ${waChecked > 0 ? `
+    <div class="metric-card mc-green">
+      <div class="metric-label">WhatsApp Válidos</div>
+      <div class="metric-value">${waTaxa}%</div>
+      <div class="metric-sub">${waActive} de ${waChecked} validados</div>
+    </div>` : `
+    <div class="metric-card mc-green">
+      <div class="metric-label">WhatsApp Válidos</div>
+      <div class="metric-value" style="color:var(--muted-3)">—</div>
+      <div class="metric-sub">Use o botão nos cards</div>
+    </div>`}
+    <div class="metric-card mc-orange">
+      <div class="metric-label">Leads Exclusivos</div>
+      <div class="metric-value">${dedupFiltered}</div>
+      <div class="metric-sub">duplicatas bloqueadas</div>
+    </div>
+  </div>
+
+  <!-- FUNIL VISUAL -->
+  <div class="metrics-section-title">Funil de Conversão</div>
+  <div class="funnel-wrap">
+    ${[
+      { label: 'Mapeados',   count: total,       color: 'var(--muted-3)', pct: 100 },
+      { label: 'Abordados',  count: abordados,   color: 'var(--gold)',    pct: total > 0 ? Math.round(abordados/total*100) : 0 },
+      { label: 'Responderam',count: responderam, color: 'var(--orange)',  pct: abordados > 0 ? Math.round(responderam/abordados*100) : 0 },
+      { label: 'Fechados',   count: fechados,    color: 'var(--green)',   pct: responderam > 0 ? Math.round(fechados/responderam*100) : 0 },
+    ].map(s => `
+    <div class="funnel-step">
+      <div class="funnel-label">${s.label}</div>
+      <div class="funnel-bar-wrap">
+        <div class="metrics-bar-track">
+          <div class="metrics-bar-fill" style="width:${s.pct}%;background:${s.color}"></div>
+        </div>
+      </div>
+      <div class="funnel-count" style="color:${s.color}">${s.count}</div>
+      <div class="funnel-pct">${s.pct}%</div>
+    </div>`).join('')}
+  </div>
+
+  <!-- DISTRIBUIÇÃO DE VULNERABILIDADE -->
+  ${allLeads.length > 0 ? `
+  <div class="metrics-section-title">Distribuição de Vulnerabilidade dos Leads Atuais</div>
+  <div style="background:var(--dark-2);border:1px solid var(--dark-4);border-radius:14px;padding:20px">
+    ${[
+      { label: 'Sem site próprio',         count: vulnCounts.sem_site,  color: 'var(--orange)' },
+      { label: 'Sem Instagram',            count: vulnCounts.sem_ig,    color: 'var(--ig)' },
+      { label: 'Instagram parado >30 dias',count: vulnCounts.ig_parado, color: 'var(--red)' },
+      { label: 'Nota abaixo de 4.0',       count: vulnCounts.nota_baixa,color: 'var(--red)' },
+      { label: 'Sem telefone',             count: vulnCounts.sem_tel,   color: 'var(--muted-2)' },
+    ].map(v => {
+      const pct = Math.round(v.count / vulnTotal * 100);
+      return `
+      <div class="metrics-bar-wrap">
+        <div class="metrics-bar-label">
+          ${v.label}
+          <span>${v.count} leads (${pct}%)</span>
+        </div>
+        <div class="metrics-bar-track">
+          <div class="metrics-bar-fill" style="width:${pct}%;background:${v.color}"></div>
+        </div>
+      </div>`;
+    }).join('')}
+    <div style="font-size:11px;color:var(--muted-2);margin-top:12px">
+      Baseado nos ${allLeads.length} leads da sessão atual. Rode uma nova busca para atualizar.
+    </div>
+  </div>` : ''}
+
+  <!-- INTERPRETAÇÃO -->
+  <div class="metrics-section-title">Diagnóstico da sua Prospecção</div>
+  <div class="funnel-wrap" style="font-size:13px;line-height:1.9;color:var(--muted-3)">
+    ${abordados === 0
+      ? `<div style="color:var(--muted-2)">Você ainda não marcou nenhum lead como abordado. Comece a prospectar, atualize os status nos cards e as métricas de conversão aparecerão aqui.</div>`
+      : `
+      ${taxaAbordagem < 15
+        ? `<div style="color:var(--red);font-weight:600;margin-bottom:6px">⚠ Taxa de ação baixa — ${taxaAbordagem}% dos leads mapeados foram abordados</div>
+           <div style="margin-bottom:12px">Você está mapeando mais do que agindo. Foque em abordar os leads de maior score antes de gerar novos.</div>`
+        : `<div style="color:var(--green);font-weight:600;margin-bottom:6px">✓ Taxa de ação saudável — ${taxaAbordagem}% dos mapeados abordados</div><div style="margin-bottom:12px"></div>`
+      }
+      ${taxaResposta < 10 && abordados >= 5
+        ? `<div style="color:var(--red);font-weight:600;margin-bottom:6px">⚠ Taxa de resposta muito baixa — ${taxaResposta}%</div>
+           <div style="margin-bottom:12px">Revise o gancho da DM. O problema mais comum é a mensagem soar como copy automático. Personalize os primeiros 10 caracteres com algo específico do negócio.</div>`
+        : taxaResposta < 25 && abordados >= 5
+        ? `<div style="color:var(--orange);font-weight:600;margin-bottom:6px">→ Taxa de resposta abaixo do ideal — ${taxaResposta}%</div>
+           <div style="margin-bottom:12px">O benchmark de prospecção B2B via DM é 25-40%. Teste variar o canal — se foi por WhatsApp, tente o comentário do Instagram primeiro.</div>`
+        : abordados >= 5
+        ? `<div style="color:var(--green);font-weight:600;margin-bottom:6px">✓ Taxa de resposta acima da média — ${taxaResposta}%</div><div style="margin-bottom:12px"></div>`
+        : ''
+      }
+      ${scriptsCopied < abordados && abordados > 0
+        ? `<div style="color:var(--orange);font-weight:600;margin-bottom:6px">→ Você abordou ${abordados} leads mas copiou apenas ${scriptsCopied} scripts</div>
+           <div>Isso pode indicar que está abordando de cabeça em vez de usar os scripts gerados. Use os scripts como base — edite os primeiros 10 caracteres e envie.</div>`
+        : ''
+      }
+    `}
+  </div>
+
+  <!-- AVISO DE GAMIFICAÇÃO -->
+  ${taxaAbordagem < 20 && total > 5
+    ? `<div style="background:rgba(232,112,58,0.06);border:1px solid rgba(232,112,58,0.2);border-radius:12px;padding:14px 18px;margin-top:16px;font-size:13px;color:var(--orange)">
+        🎯 Você tem ${total - abordados} leads ainda não abordados. Abordar mais ${Math.min(5, total-abordados)} hoje pode gerar ${fmtMoney(Math.min(5, total-abordados) * ticket * 0.1)} em pipeline adicional.
+      </div>`
+    : ''
+  }
+  `;
+}
+
+function exportMetricsCSV() {
+  const pipeline = getPipeline();
+  const rows = Object.keys(pipeline).map(k => {
+    const l = pipeline[k];
+    return [csvCell(l.nome), csvCell(l.endereco), csvCell(l.telefone), l.status, l.date || '', csvCell(l.problemas)].join(';');
+  });
+  const csv = ['Nome;Endereço;Telefone;Status;Data;Diagnóstico', ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `vhalen_pipeline_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
 }
 </script>
 </body>
